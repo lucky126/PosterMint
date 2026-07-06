@@ -1,0 +1,13 @@
+<Solution>
+  <Folder Name="/src/">
+    <Project Path="src/PosterMint.Application/PosterMint.Application.csproj" />
+    <Project Path="src/PosterMint.Domain/PosterMint.Domain.csproj" />
+    <Project Path="src/PosterMint.Infrastructure/PosterMint.Infrastructure.csproj" />
+    <Project Path="src/PosterMint.Web/PosterMint.Web.csproj" />
+    <Project Path="src/PosterMint.Worker/PosterMint.Worker.csproj" />
+  </Folder>
+  <Folder Name="/tests/">
+    <Project Path="tests/PosterMint.IntegrationTests/PosterMint.IntegrationTests.csproj" />
+    <Project Path="tests/PosterMint.UnitTests/PosterMint.UnitTests.csproj" />
+  </Folder>
+</Solution>

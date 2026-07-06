@@ -1,0 +1,433 @@
+@page "/admin/templates/{TemplateId:int}"
+@using PosterMint.Application.Configs
+@using System.Text.Json
+@using System.Text.Json.Nodes
+@using PosterMint.Application.Rendering
+@using PosterMint.Application.Sessions
+@using PosterMint.Application.Templates
+@using PosterMint.Domain.Enums
+@inject IConfigService ConfigService
+@inject ITemplateService TemplateService
+@inject IRenderService RenderService
+@inject NavigationManager NavigationManager
+
+<PageTitle>商场模板编辑器</PageTitle>
+
+@if (_loading)
+{
+    <p>正在加载模板…</p>
+}
+else if (_template is null)
+{
+    <p class="error-text">模板不存在。</p>
+}
+else
+{
+    <section class="hero admin-hero">
+        <p class="eyebrow">Mall Template Studio</p>
+        <h1>@_name</h1>
+        <p class="summary">
+            这是商场运营侧的模板制作区。默认工作方式是对话，而不是拖拽和填表。
+            你直接告诉系统“背景改成喜庆红”“加二维码区在右下角”“活动价再大一点”，模板会跟着改。
+        </p>
+    </section>
+
+    <section class="editor-shell">
+        <div class="editor-panel preview-panel">
+            <div class="panel-header">
+                <span class="eyebrow">Live Template</span>
+                <h2>@_name</h2>
+                <p>当前状态：@GetStatusText(_template.Status)</p>
+            </div>
+
+            <div class="poster-stage">
+                <div class="preview-scale">
+                    @((MarkupString)_previewMarkup)
+                </div>
+            </div>
+        </div>
+
+        <div class="editor-panel conversation-panel">
+            <div class="panel-header">
+                <span class="eyebrow">Dialogue First</span>
+                <h2>直接说你想怎么改模板</h2>
+                <p>不要想字段、节点和布局结构，先像和设计师沟通一样描述结果。</p>
+            </div>
+
+            <div class="quick-actions">
+                <button @onclick='@(() => UsePrompt("背景改成喜庆红"))'>背景喜庆红</button>
+                <button @onclick='@(() => UsePrompt("加二维码区在右下角"))'>加二维码区</button>
+                <button @onclick='@(() => UsePrompt("活动价再大一点"))'>价格更醒目</button>
+                <button @onclick='@(() => UsePrompt("店名移到左上角"))'>店名移左上</button>
+                <button @onclick='@(() => UsePrompt("加三个卖点标签"))'>加卖点标签</button>
+            </div>
+
+            <div class="chat-log">
+                @foreach (var item in _messages)
+                {
+                    <div class="chat-bubble @(item.Role)">
+                        <span>@item.RoleLabel</span>
+                        <p>@item.Text</p>
+                    </div>
+                }
+            </div>
+
+            <div class="chat-compose">
+                <textarea @bind="_instructionMessage" placeholder="例如：做成火锅店周末活动模板，背景更热闹一点，价格区放右下角，二维码加白色底框"></textarea>
+                <div class="compose-actions">
+                    <button class="action-button action-button--ghost" @onclick="GoBack">返回模板库</button>
+                    <button class="action-button action-button--ghost" @onclick="RefreshPreview">刷新预览</button>
+                    <button class="action-button" @onclick="ApplyInstructionAsync">发送指令</button>
+                </div>
+            </div>
+
+            <div class="template-meta">
+                <label>
+                    模板名称
+                    <input @bind="_name" />
+                </label>
+                <label>
+                    模板描述
+                    <textarea @bind="_description"></textarea>
+                </label>
+            </div>
+
+            <div class="publish-actions">
+                <button class="action-button action-button--ghost" @onclick="SaveMetaAsync">保存基础信息</button>
+                <button class="action-button" @onclick="SubmitAsync">提交审核</button>
+            </div>
+
+            <details class="manual-panel">
+                <summary>高级结构编辑（兜底）</summary>
+                <div class="field-list">
+                    <div class="field-card">
+                        <label>场景</label>
+                        <select @bind="_scene">
+                            @foreach (var scene in Enum.GetValues<TemplateSceneType>())
+                            {
+                                <option value="@scene">@scene</option>
+                            }
+                        </select>
+                    </div>
+
+                    <div class="field-card">
+                        <label>标签（格式：维度:值，每行一个）</label>
+                        <textarea @bind="_tagsText"></textarea>
+                    </div>
+
+                    <div class="field-card">
+                        <label>Canvas JSON</label>
+                        <textarea class="code-box" @bind="_canvasJson"></textarea>
+                    </div>
+
+                    <div class="field-card">
+                        <label>Fields JSON</label>
+                        <textarea class="code-box large-code-box" @bind="_fieldsJson"></textarea>
+                    </div>
+
+                    <div class="field-card">
+                        <label>Layout JSON</label>
+                        <textarea class="code-box large-code-box" @bind="_layoutJson"></textarea>
+                    </div>
+                </div>
+
+                <button class="action-button" @onclick="SaveAdvancedAsync">保存高级结构</button>
+            </details>
+        </div>
+    </section>
+}
+
+@if (!string.IsNullOrWhiteSpace(_error))
+{
+    <p class="error-text">@_error</p>
+}
+
+@code {
+    [Parameter]
+    public int TemplateId { get; set; }
+
+    private TemplateDetailDto? _template;
+    private bool _loading = true;
+    private string? _error;
+    private string _name = string.Empty;
+    private string _description = string.Empty;
+    private TemplateSceneType _scene = TemplateSceneType.SingleDish;
+    private string _canvasJson = "{}";
+    private string _fieldsJson = "[]";
+    private string _layoutJson = "[]";
+    private string _tagsText = string.Empty;
+    private string _previewMarkup = string.Empty;
+    private string _instructionMessage = string.Empty;
+    private readonly List<EditorMessage> _messages = [];
+
+    protected override async Task OnParametersSetAsync()
+    {
+        var status = await ConfigService.GetAiConfigurationStatusAsync();
+        if (!status.IsReady)
+        {
+            NavigationManager.NavigateTo($"/setup/ai?returnUrl=%2Fadmin%2Ftemplates%2F{TemplateId}");
+            return;
+        }
+        await LoadAsync();
+    }
+
+    private async Task LoadAsync()
+    {
+        _loading = true;
+        _error = null;
+
+        try
+        {
+            _template = await TemplateService.GetAsync(TemplateId);
+            if (_template is not null)
+            {
+                SyncEditableState();
+                SeedAssistantMessage();
+                RefreshPreview();
+            }
+        }
+        catch (Exception exception)
+        {
+            _error = exception.Message;
+        }
+        finally
+        {
+            _loading = false;
+        }
+    }
+
+    private void SyncEditableState()
+    {
+        if (_template is null)
+        {
+            return;
+        }
+
+        _name = _template.Name;
+        _description = _template.Description ?? string.Empty;
+        _scene = _template.Scene;
+        _canvasJson = _template.Canvas?.ToJsonString(new JsonSerializerOptions { WriteIndented = true }) ?? "{}";
+        _fieldsJson = _template.Fields?.ToJsonString(new JsonSerializerOptions { WriteIndented = true }) ?? "[]";
+        _layoutJson = _template.Layout?.ToJsonString(new JsonSerializerOptions { WriteIndented = true }) ?? "[]";
+        _tagsText = string.Join('\n', _template.Tags.Select(x => $"{x.Dimension}:{x.TagValue}"));
+    }
+
+    private void SeedAssistantMessage()
+    {
+        if (_messages.Count > 0)
+        {
+            return;
+        }
+
+        _messages.Add(new EditorMessage(
+            "assistant",
+            "模板助手",
+            "我已经打开这个模板。你可以直接说“背景改成喜庆红”“加二维码区在右下角”“活动价再大一点”“店名移到左上角”。"));
+    }
+
+    private void RefreshPreview()
+    {
+        try
+        {
+            var synthetic = BuildPreviewSession();
+            _previewMarkup = RenderService.RenderPosterHtml(synthetic);
+        }
+        catch (Exception exception)
+        {
+            _error = $"预览构建失败：{exception.Message}";
+        }
+    }
+
+    private async Task ApplyInstructionAsync()
+    {
+        if (_template is null || string.IsNullOrWhiteSpace(_instructionMessage))
+        {
+            return;
+        }
+
+        var message = _instructionMessage.Trim();
+        _messages.Add(new EditorMessage("user", "你", message));
+
+        try
+        {
+            var result = await TemplateService.ApplyInstructionAsync(_template.Id, new ApplyTemplateInstructionRequest
+            {
+                Message = message
+            });
+
+            _template = result.Template;
+            SyncEditableState();
+            RefreshPreview();
+            _messages.Add(new EditorMessage("assistant", "模板助手", result.Reply));
+            foreach (var warning in result.Warnings)
+            {
+                _messages.Add(new EditorMessage("assistant", "提示", warning));
+            }
+            _instructionMessage = string.Empty;
+        }
+        catch (Exception exception)
+        {
+            _error = exception.Message;
+        }
+    }
+
+    private async Task SaveMetaAsync()
+    {
+        if (_template is null)
+        {
+            return;
+        }
+
+        try
+        {
+            _template = await TemplateService.UpdateAsync(_template.Id, BuildRequest());
+            SyncEditableState();
+            RefreshPreview();
+            _messages.Add(new EditorMessage("assistant", "系统", "模板基础信息已保存。"));
+        }
+        catch (Exception exception)
+        {
+            _error = exception.Message;
+        }
+    }
+
+    private async Task SaveAdvancedAsync()
+    {
+        if (_template is null)
+        {
+            return;
+        }
+
+        try
+        {
+            _template = await TemplateService.UpdateAsync(_template.Id, BuildRequest());
+            SyncEditableState();
+            RefreshPreview();
+            _messages.Add(new EditorMessage("assistant", "系统", "高级结构已保存。"));
+        }
+        catch (Exception exception)
+        {
+            _error = exception.Message;
+        }
+    }
+
+    private async Task SubmitAsync()
+    {
+        if (_template is null)
+        {
+            return;
+        }
+
+        try
+        {
+            await TemplateService.UpdateAsync(_template.Id, BuildRequest());
+            _template = await TemplateService.SubmitAsync(_template.Id);
+            NavigationManager.NavigateTo("/admin/approvals");
+        }
+        catch (Exception exception)
+        {
+            _error = exception.Message;
+        }
+    }
+
+    private UpdateTemplateRequest BuildRequest() => new()
+    {
+        Name = _name,
+        Description = _description,
+        Scene = _scene,
+        Canvas = JsonNode.Parse(_canvasJson) as JsonObject ?? new JsonObject(),
+        Fields = JsonNode.Parse(_fieldsJson) as JsonArray ?? new JsonArray(),
+        Layout = JsonNode.Parse(_layoutJson) as JsonArray ?? new JsonArray(),
+        Tags = ParseTags()
+    };
+
+    private IReadOnlyList<TemplateTagDto> ParseTags() =>
+        _tagsText.Split(['\r', '\n'], StringSplitOptions.RemoveEmptyEntries | StringSplitOptions.TrimEntries)
+            .Select(line => line.Split(':', 2, StringSplitOptions.TrimEntries))
+            .Where(parts => parts.Length == 2 && !string.IsNullOrWhiteSpace(parts[0]) && !string.IsNullOrWhiteSpace(parts[1]))
+            .Select(parts => new TemplateTagDto(parts[0], parts[1], 1.0d))
+            .ToList();
+
+    private PosterSessionDto BuildPreviewSession()
+    {
+        var canvas = JsonNode.Parse(_canvasJson) as JsonObject ?? new JsonObject();
+        var fieldsDefinition = JsonNode.Parse(_fieldsJson) as JsonArray ?? new JsonArray();
+        var layout = JsonNode.Parse(_layoutJson) as JsonArray ?? new JsonArray();
+        var fields = new JsonObject();
+
+        foreach (var item in fieldsDefinition.OfType<JsonObject>())
+        {
+            var key = item["key"]?.GetValue<string>() ?? string.Empty;
+            if (string.IsNullOrWhiteSpace(key))
+            {
+                continue;
+            }
+
+            if (item["default"] is not null)
+            {
+                fields[key] = item["default"]!.DeepClone();
+                continue;
+            }
+
+            var type = item["type"]?.GetValue<string>() ?? "text";
+            fields[key] = type switch
+            {
+                "image" => BuildPlaceholderImage(type),
+                "qrcode" => BuildPlaceholderImage(type),
+                "features" => new JsonArray("招牌菜", "团购优惠", "周末热卖"),
+                "items" => new JsonArray(
+                    new JsonObject { ["name"] = "招牌小炒肉", ["price"] = "28" },
+                    new JsonObject { ["name"] = "酸菜鱼", ["price"] = "58" }),
+                "price" => "59.9",
+                _ => item["label"]?.GetValue<string>() ?? key
+            };
+        }
+
+        return new PosterSessionDto(
+            $"preview_{TemplateId}",
+            TemplateId,
+            _name,
+            SessionStatus.Created,
+            _scene.ToString(),
+            "preview",
+            null,
+            new JsonObject
+            {
+                ["templateId"] = TemplateId,
+                ["name"] = _name,
+                ["canvas"] = canvas,
+                ["fields"] = fieldsDefinition,
+                ["layout"] = layout
+            },
+            fields,
+            layout,
+            [],
+            [],
+            [],
+            [],
+            DateTimeOffset.UtcNow,
+            DateTimeOffset.UtcNow);
+    }
+
+    private static string BuildPlaceholderImage(string type)
+    {
+        var label = type == "qrcode" ? "QR" : "IMG";
+        var svg = $"<svg xmlns='http://www.w3.org/2000/svg' width='400' height='400'><rect width='400' height='400' fill='#e7dfd2'/><text x='200' y='215' text-anchor='middle' font-size='48' fill='#7c6459'>{label}</text></svg>";
+        return $"data:image/svg+xml;charset=utf-8,{Uri.EscapeDataString(svg)}";
+    }
+
+    private void UsePrompt(string prompt) => _instructionMessage = prompt;
+
+    private void GoBack() => NavigationManager.NavigateTo("/admin/templates");
+
+    private static string GetStatusText(TemplateStatus status) => status switch
+    {
+        TemplateStatus.Pending => "待审核",
+        TemplateStatus.Approved => "已通过",
+        TemplateStatus.Rejected => "已驳回",
+        TemplateStatus.Archived => "已归档",
+        _ => "草稿"
+    };
+
+    private sealed record EditorMessage(string Role, string RoleLabel, string Text);
+}

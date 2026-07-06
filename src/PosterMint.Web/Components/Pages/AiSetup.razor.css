@@ -1,0 +1,311 @@
+/* ============ 页面头部 ============ */
+.page-hero {
+    display: flex;
+    justify-content: space-between;
+    align-items: flex-start;
+    padding: 1.75rem 2rem 1rem;
+    background: #fff;
+    border-bottom: 1px solid #eef0f2;
+    gap: 1.5rem;
+    flex-wrap: wrap;
+}
+
+.page-hero .eyebrow {
+    margin: 0 0 0.25rem;
+    color: #4caf50;
+    font-size: 0.75rem;
+    font-weight: 700;
+    letter-spacing: 0.1em;
+}
+
+.page-hero h1 {
+    margin: 0;
+    font-size: 1.5rem;
+    color: #1e2530;
+}
+
+.page-sub {
+    margin: 0.35rem 0 0;
+    color: #6c7484;
+    font-size: 0.88rem;
+    max-width: 640px;
+    line-height: 1.55;
+}
+
+.status-strip {
+    display: flex;
+    gap: 0.5rem;
+    flex-wrap: wrap;
+}
+
+/* ============ 状态胶囊 ============ */
+.status-pill {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.4rem;
+    padding: 0.25rem 0.7rem;
+    border-radius: 999px;
+    font-size: 0.78rem;
+    font-weight: 600;
+}
+
+.status-pill.is-active {
+    background: rgba(76,175,80,.12);
+    color: #2e7d32;
+}
+
+.status-pill.is-disabled {
+    background: #eef0f2;
+    color: #8a94a6;
+}
+
+.status-dot {
+    width: 6px;
+    height: 6px;
+    border-radius: 50%;
+    background: currentColor;
+    display: inline-block;
+}
+
+/* ============ 卡片网格 ============ */
+.setup-grid {
+    display: grid;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    gap: 1.25rem;
+    padding: 1.25rem 2rem 0;
+}
+
+@media (max-width: 1180px) {
+    .setup-grid {
+        grid-template-columns: 1fr;
+    }
+}
+
+.setup-card {
+    background: #fff;
+    border: 1px solid #eef0f2;
+    border-radius: 0.75rem;
+    overflow: hidden;
+    box-shadow: 0 1px 3px rgba(0,0,0,.03);
+    display: flex;
+    flex-direction: column;
+}
+
+.card-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: flex-start;
+    padding: 1.1rem 1.25rem;
+    border-bottom: 1px solid #eef0f2;
+    background: #fafbfc;
+    gap: 0.75rem;
+}
+
+.card-header-left {
+    display: flex;
+    align-items: flex-start;
+    gap: 0.75rem;
+    min-width: 0;
+}
+
+.card-icon {
+    font-size: 1.6rem;
+    line-height: 1;
+    flex-shrink: 0;
+}
+
+.card-header h2 {
+    margin: 0;
+    font-size: 1rem;
+    color: #1e2530;
+    font-weight: 700;
+}
+
+.card-sub {
+    margin: 0.2rem 0 0;
+    color: #8a94a6;
+    font-size: 0.78rem;
+}
+
+.card-body {
+    padding: 1.25rem;
+    display: flex;
+    flex-direction: column;
+    gap: 0.9rem;
+}
+
+/* ============ 表单 ============ */
+.form-row {
+    display: flex;
+    flex-direction: column;
+    gap: 0.35rem;
+}
+
+.form-row label {
+    font-size: 0.82rem;
+    color: #4d5566;
+    font-weight: 600;
+    display: flex;
+    align-items: baseline;
+    gap: 0.5rem;
+}
+
+.label-hint {
+    font-size: 0.72rem;
+    color: #a0a7b5;
+    font-weight: 400;
+}
+
+.form-row input,
+.form-row select,
+.form-row textarea {
+    padding: 0.55rem 0.75rem;
+    border: 1px solid #d9dee6;
+    border-radius: 0.4rem;
+    font-size: 0.9rem;
+    font-family: inherit;
+    outline: none;
+    background: #fff;
+    color: #2b323d;
+    transition: border-color .15s, box-shadow .15s;
+    width: 100%;
+    box-sizing: border-box;
+}
+
+.form-row input:focus,
+.form-row select:focus,
+.form-row textarea:focus {
+    border-color: #4caf50;
+    box-shadow: 0 0 0 3px rgba(76,175,80,.1);
+}
+
+.form-grid-2 {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 0.75rem;
+}
+
+/* ============ 测试栏 ============ */
+.test-bar {
+    display: flex;
+    align-items: center;
+    gap: 0.75rem;
+    padding-top: 0.5rem;
+    border-top: 1px dashed #eef0f2;
+    flex-wrap: wrap;
+}
+
+.test-result {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.5rem;
+    padding: 0.35rem 0.7rem;
+    border-radius: 0.4rem;
+    font-size: 0.82rem;
+    font-weight: 500;
+    flex: 1;
+    min-width: 0;
+    word-break: break-word;
+}
+
+.test-result.is-success {
+    background: rgba(76,175,80,.1);
+    color: #2e7d32;
+}
+
+.test-result.is-error {
+    background: rgba(211,47,47,.08);
+    color: #c62828;
+}
+
+.test-latency {
+    font-family: monospace;
+    color: #558a5a;
+    background: rgba(255,255,255,.6);
+    padding: 0.1rem 0.4rem;
+    border-radius: 0.25rem;
+    font-size: 0.75rem;
+}
+
+/* ============ 按钮 ============ */
+.btn-primary,
+.btn-ghost {
+    padding: 0.55rem 1.1rem;
+    border-radius: 0.4rem;
+    font-size: 0.88rem;
+    cursor: pointer;
+    transition: all 0.15s;
+    border: 1px solid transparent;
+    font-family: inherit;
+}
+
+.btn-primary {
+    background: #4caf50;
+    color: #fff;
+    border-color: #4caf50;
+    font-weight: 600;
+}
+
+.btn-primary:hover:not(:disabled) {
+    background: #43a047;
+}
+
+.btn-primary:disabled {
+    opacity: 0.5;
+    cursor: not-allowed;
+}
+
+.btn-ghost {
+    background: #fff;
+    color: #4d5566;
+    border-color: #d9dee6;
+    font-weight: 500;
+    white-space: nowrap;
+}
+
+.btn-ghost:hover:not(:disabled) {
+    border-color: #4caf50;
+    color: #4caf50;
+    background: rgba(76,175,80,.04);
+}
+
+.btn-ghost:disabled {
+    opacity: 0.6;
+    cursor: not-allowed;
+}
+
+.btn-ghost.is-loading {
+    background: rgba(76,175,80,.08);
+    color: #4caf50;
+    border-color: #4caf50;
+}
+
+/* ============ 底部保存栏 ============ */
+.save-bar {
+    display: flex;
+    justify-content: flex-end;
+    align-items: center;
+    gap: 1rem;
+    padding: 1.25rem 2rem 2rem;
+    flex-wrap: wrap;
+}
+
+.save-error {
+    padding: 0.55rem 0.85rem;
+    background: rgba(211,47,47,.08);
+    color: #c62828;
+    border-radius: 0.4rem;
+    font-size: 0.85rem;
+    margin-right: auto;
+}
+
+/* ============ 加载/空态 ============ */
+.empty {
+    text-align: center;
+    padding: 4rem 1rem;
+    color: #8a94a6;
+    background: #fff;
+    margin: 1.25rem 2rem;
+    border-radius: 0.6rem;
+    border: 1px dashed #d9dee6;
+}

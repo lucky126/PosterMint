@@ -1,0 +1,44 @@
+@page "/admin/ai"
+@using PosterMint.Application.AI
+@inject IChatEditingAiService AiService
+
+<PageTitle>AI 状态</PageTitle>
+
+@{
+    var status = AiService.GetStatus();
+}
+
+<section class="hero admin-hero">
+    <p class="eyebrow">AI Mode</p>
+    <h1>AI 编辑状态</h1>
+    <p class="summary">
+        当前项目默认支持两种模式：配置好 OpenAI-compatible 参数时走真实模型；未配置时走本地 AI 规则引擎，
+        这样页面交互始终可演示。
+    </p>
+</section>
+
+<section class="card-grid">
+    <article class="card">
+        <h2>当前模式</h2>
+        <p><strong>@(status.Mode == "external" ? "外部模型" : "本地 AI")</strong></p>
+        <p>Provider: @status.Provider</p>
+        <p>Model: @(string.IsNullOrWhiteSpace(status.Model) ? "未配置" : status.Model)</p>
+    </article>
+
+    <article class="card">
+        <h2>配置入口</h2>
+        <p>优先读取环境变量：</p>
+        <ul>
+            <li><code>LLM_BASE_URL</code></li>
+            <li><code>LLM_CHAT_URL</code></li>
+            <li><code>LLM_API_KEY</code></li>
+            <li><code>LLM_MODEL</code></li>
+        </ul>
+    </article>
+
+    <article class="card">
+        <h2>体验路径</h2>
+        <p><a href="/shop/templates">去模板广场</a></p>
+        <p>进入编辑页后，直接在聊天框里说“把店名改成…”、“把活动价改成…”、“把菜名加粗一点”。</p>
+    </article>
+</section>

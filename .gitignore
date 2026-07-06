@@ -1,0 +1,56 @@
+# ---------------- .NET build output ----------------
+bin/
+obj/
+out/
+*.user
+*.suo
+*.userprefs
+*.dbmdl
+*.jfm
+
+# ---------------- IDE / editors ----------------
+.vs/
+.vscode/
+.idea/
+*.swp
+*~
+.DS_Store
+Thumbs.db
+
+# ---------------- Runtime artifacts ----------------
+# SQLite dev/prod databases and WAL/SHM — may hold API keys via admin UI
+*.db
+*.db-shm
+*.db-wal
+*.sqlite
+*.sqlite3
+# but keep the templates seed directory (no .db files there anyway)
+!data/templates/
+# runtime log dumps
+*.log
+run.guard.out.log
+run.guard.err.log
+src/PosterMint.Web/data/
+
+# ---------------- User secrets / env ----------------
+appsettings.*.local.json
+appsettings.Local.json
+appsettings.Production.json
+secrets/
+.env
+.env.*
+*.pfx
+*.key
+
+# ---------------- Test / tooling ----------------
+[Tt]est[Rr]esult*/
+[Cc]overage*/
+.dotnet/
+.nuget/
+packages/
+*.nupkg
+
+# ---------------- Node / Taro (future mini-program client) ----------------
+node_modules/
+dist/
+.taro/

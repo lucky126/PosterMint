@@ -1,0 +1,22 @@
+* text=auto eol=lf
+
+# C# / VS files that should stay as CRLF on Windows checkouts
+*.cs      text eol=crlf
+*.csproj  text eol=crlf
+*.sln     text eol=crlf
+*.slnx    text eol=crlf
+*.props   text eol=crlf
+*.targets text eol=crlf
+*.razor   text eol=crlf
+
+# Binary
+*.db     binary
+*.png    binary
+*.jpg    binary
+*.jpeg   binary
+*.webp   binary
+*.pdf    binary
+*.zip    binary
+*.dll    binary
+*.exe    binary
+*.pfx    binary

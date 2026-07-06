@@ -1,0 +1,183 @@
+/* ================================================================
+   后台管理布局 - 左侧导航 + 右侧内容区
+   ================================================================ */
+
+.admin-shell {
+    display: grid;
+    grid-template-columns: 220px 1fr;
+    min-height: 100vh;
+    background: #f4f5f7;
+    color: #2b211d;
+}
+
+/* -------- 侧边栏 -------- */
+.sidebar {
+    display: flex;
+    flex-direction: column;
+    background: #1e2530;
+    color: #e4e6ea;
+    padding: 1.25rem 0 1rem;
+    box-shadow: 2px 0 8px rgba(0,0,0,.06);
+}
+
+.brand {
+    display: flex;
+    align-items: center;
+    gap: 0.65rem;
+    padding: 0 1.25rem 1.25rem;
+    border-bottom: 1px solid rgba(255,255,255,.08);
+    margin-bottom: 0.75rem;
+}
+
+.brand-icon {
+    font-size: 1.75rem;
+}
+
+.brand-name {
+    font-size: 0.95rem;
+    font-weight: 700;
+    color: #fff;
+    letter-spacing: 0.03em;
+}
+
+.brand-tag {
+    font-size: 0.72rem;
+    color: #8a94a6;
+    margin-top: 0.15rem;
+}
+
+/* -------- 导航分组 -------- */
+.side-nav {
+    flex: 1;
+    display: flex;
+    flex-direction: column;
+    gap: 0.5rem;
+    padding: 0 0.5rem;
+}
+
+.nav-group {
+    display: flex;
+    flex-direction: column;
+}
+
+.nav-group-title {
+    font-size: 0.72rem;
+    color: #8a94a6;
+    font-weight: 700;
+    letter-spacing: 0.08em;
+    padding: 0.6rem 0.75rem 0.4rem;
+    text-transform: none;
+}
+
+.nav-item {
+    display: block;
+    padding: 0.55rem 0.75rem 0.55rem 1.75rem;
+    color: #c5c9d1;
+    text-decoration: none;
+    font-size: 0.9rem;
+    border-radius: 0.4rem;
+    margin: 1px 0;
+    transition: background 0.15s, color 0.15s;
+}
+
+.nav-item:hover {
+    background: rgba(255,255,255,.06);
+    color: #fff;
+}
+
+.nav-item.active {
+    background: #4caf50;
+    color: #fff;
+    font-weight: 600;
+}
+
+.nav-group--secondary {
+    margin-top: auto;
+    border-top: 1px solid rgba(255,255,255,.06);
+    padding-top: 0.5rem;
+}
+
+.sidebar-foot {
+    padding: 0.75rem 1rem 0;
+    border-top: 1px solid rgba(255,255,255,.06);
+}
+
+.foot-link {
+    display: block;
+    font-size: 0.78rem;
+    color: #6c7484;
+    text-decoration: none;
+    padding: 0.4rem 0.5rem;
+    border-radius: 0.3rem;
+}
+
+.foot-link:hover {
+    color: #c5c9d1;
+    background: rgba(255,255,255,.04);
+}
+
+/* -------- 主内容区 -------- */
+.admin-body {
+    min-width: 0;   /* 关键：防止 grid 子项撑破布局 */
+    overflow-x: hidden;
+    padding: 0;     /* 由具体页面控制内边距 */
+    background: #f4f5f7;
+}
+
+/* -------- 全局辅助样式（保留以兼容旧页面） -------- */
+:global(.hero) {
+    padding: 1.5rem 2rem 1rem;
+}
+
+:global(.eyebrow) {
+    margin: 0 0 0.4rem;
+    color: #4caf50;
+    font-size: 0.8rem;
+    font-weight: 700;
+    text-transform: uppercase;
+    letter-spacing: 0.08em;
+}
+
+:global(.hero h1) {
+    margin: 0;
+    font-size: 1.75rem;
+    line-height: 1.1;
+    color: #1e2530;
+}
+
+:global(.summary) {
+    max-width: 48rem;
+    margin: 0.5rem 0 0;
+    color: #5d6472;
+    font-size: 0.95rem;
+    line-height: 1.6;
+}
+
+:global(.card-grid) {
+    display: grid;
+    gap: 1rem;
+    grid-template-columns: repeat(auto-fit, minmax(260px, 1fr));
+    margin-top: 1.5rem;
+    padding: 0 2rem;
+}
+
+:global(.card) {
+    padding: 1.5rem;
+    border: 1px solid #e5e7eb;
+    border-radius: 0.75rem;
+    background: #fff;
+    box-shadow: 0 1px 3px rgba(0,0,0,.04);
+}
+
+:global(.card h2) {
+    margin: 0 0 1rem;
+    font-size: 1rem;
+    color: #1e2530;
+}
+
+:global(.card ul) {
+    margin: 0;
+    padding-left: 1.1rem;
+    color: #5d6472;
+    line-height: 1.7;
+}

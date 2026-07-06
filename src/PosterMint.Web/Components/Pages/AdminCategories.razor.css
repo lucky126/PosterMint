@@ -1,0 +1,57 @@
+.category-grid {
+    display: grid;
+    gap: 1rem;
+    grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+}
+
+.category-card {
+    padding: 1.35rem;
+    border: 1px solid rgba(43,33,29,0.08);
+    border-radius: 1.25rem;
+    background: linear-gradient(180deg, rgba(255,255,255,0.94), rgba(249,244,238,0.94));
+    box-shadow: 0 20px 45px rgba(63,42,34,0.06);
+}
+
+.category-card__top {
+    display: flex;
+    justify-content: space-between;
+    gap: 1rem;
+    align-items: start;
+}
+
+.category-card h2 {
+    margin: 0.2rem 0 0;
+    font-size: 1.35rem;
+}
+
+.category-card p {
+    color: #6a544b;
+    line-height: 1.7;
+}
+
+.count-pill {
+    padding: 0.45rem 0.7rem;
+    border-radius: 999px;
+    background: rgba(31,107,76,0.12);
+    color: #1f6b4c;
+    font-size: 0.82rem;
+    font-weight: 700;
+}
+
+.stats-row {
+    display: flex;
+    gap: 1rem;
+    color: #7c6459;
+    font-weight: 700;
+    margin-bottom: 0.85rem;
+}
+
+.tag-row {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 0.5rem;
+}
+
+.small-eyebrow {
+    font-size: 0.72rem;
+}

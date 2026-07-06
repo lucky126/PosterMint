@@ -1,0 +1,120 @@
+@page "/admin/approvals"
+@using PosterMint.Application.Templates
+@using PosterMint.Domain.Enums
+@inject ITemplateService TemplateService
+@inject NavigationManager NavigationManager
+
+<PageTitle>审核中心</PageTitle>
+
+<section class="hero admin-hero">
+    <p class="eyebrow">Approval Center</p>
+    <h1>待审核模板</h1>
+    <p class="summary">
+        审核中心决定哪些模板可以进入商铺侧。这个页面先实现最小闭环：看待审核模板、附评论、通过或驳回。
+    </p>
+</section>
+
+@if (_loading)
+{
+    <p>正在加载待审核模板…</p>
+}
+else
+{
+    <section class="approval-list">
+        @foreach (var template in _templates)
+        {
+            <article class="approval-card">
+                <div class="approval-card__head">
+                    <div>
+                        <span class="scene-pill">@GetSceneText(template.Scene)</span>
+                        <h2>@template.Name</h2>
+                    </div>
+                    <span class="status-pill is-pending">待审核</span>
+                </div>
+                <p>@template.Description</p>
+                <div class="tag-row">
+                    @foreach (var tag in template.Tags.Take(4))
+                    {
+                        <span class="tag-chip">@tag.TagValue</span>
+                    }
+                </div>
+                <textarea @bind="_comments[template.Id]" placeholder="填写审核意见（可选）"></textarea>
+                <div class="approval-actions">
+                    <button class="action-button action-button--ghost" @onclick="() => OpenEditor(template.Id)">查看模板</button>
+                    <button class="action-button action-button--reject" @onclick="() => ReviewAsync(template.Id, false)">驳回</button>
+                    <button class="action-button" @onclick="() => ReviewAsync(template.Id, true)">通过</button>
+                </div>
+            </article>
+        }
+    </section>
+}
+
+@if (!string.IsNullOrWhiteSpace(_error))
+{
+    <p class="error-text">@_error</p>
+}
+
+@code {
+    private IReadOnlyList<TemplateSummaryDto> _templates = [];
+    private readonly Dictionary<int, string> _comments = [];
+    private bool _loading = true;
+    private string? _error;
+
+    protected override async Task OnInitializedAsync()
+    {
+        await LoadAsync();
+    }
+
+    private async Task LoadAsync()
+    {
+        _loading = true;
+        _error = null;
+
+        try
+        {
+            _templates = (await TemplateService.ListAsync())
+                .Where(x => x.Status == TemplateStatus.Pending)
+                .ToList();
+            foreach (var template in _templates)
+            {
+                _comments.TryAdd(template.Id, string.Empty);
+            }
+        }
+        catch (Exception exception)
+        {
+            _error = exception.Message;
+        }
+        finally
+        {
+            _loading = false;
+        }
+    }
+
+    private async Task ReviewAsync(int id, bool approved)
+    {
+        try
+        {
+            await TemplateService.ReviewAsync(id, new ReviewTemplateRequest
+            {
+                Approved = approved,
+                Comment = _comments.GetValueOrDefault(id)
+            });
+            await LoadAsync();
+        }
+        catch (Exception exception)
+        {
+            _error = exception.Message;
+        }
+    }
+
+    private void OpenEditor(int id) => NavigationManager.NavigateTo($"/admin/templates/{id}");
+
+    private static string GetSceneText(TemplateSceneType scene) => scene switch
+    {
+        TemplateSceneType.Menu => "菜单",
+        TemplateSceneType.StorePromo => "门店宣传",
+        TemplateSceneType.Festival => "节庆活动",
+        TemplateSceneType.Custom => "自定义",
+        _ => "单菜品"
+    };
+}

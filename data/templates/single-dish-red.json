@@ -1,0 +1,37 @@
+﻿{
+  "id": "single-dish-red",
+  "name": "单菜品促销海报",
+  "scene": "single_dish",
+  "description": "一张菜品实拍图，突出菜名、促销价、原价和二维码。",
+  "canvas": {
+    "width": 1080,
+    "height": 1920,
+    "background": "#841d18"
+  },
+  "fields": [
+    { "key": "storeName", "label": "店铺名称", "type": "text", "maxLength": 16, "default": "今日招牌" },
+    { "key": "dishImage", "label": "菜品图片", "type": "image", "required": true },
+    { "key": "dishName", "label": "菜品名称", "type": "text", "required": true, "maxLength": 18 },
+    { "key": "slogan", "label": "促销语", "type": "text", "maxLength": 18, "default": "限时特惠 现点现做" },
+    { "key": "price", "label": "原价", "type": "price" },
+    { "key": "promoPrice", "label": "促销价", "type": "price", "required": true },
+    { "key": "qrcode", "label": "二维码", "type": "qrcode" }
+  ],
+  "layout": [
+    { "type": "rect", "x": 0, "y": 0, "w": 1080, "h": 1920, "fill": "#841d18" },
+    { "type": "rect", "x": 58, "y": 72, "w": 964, "h": 1776, "radius": 28, "fill": "#fff5e5" },
+    { "type": "rect", "x": 92, "y": 104, "w": 896, "h": 690, "radius": 24, "fill": "#2c1714" },
+    { "type": "image", "field": "dishImage", "x": 92, "y": 104, "w": 896, "h": 690, "radius": 24, "fit": "cover", "placeholder": "菜品图片" },
+    { "type": "rect", "x": 92, "y": 832, "w": 896, "h": 82, "radius": 41, "fill": "#2f6c4f" },
+    { "type": "text", "field": "storeName", "x": 132, "y": 848, "w": 816, "h": 58, "fontSize": 34, "fontWeight": 700, "color": "#fffaf0", "align": "center", "maxLines": 1 },
+    { "type": "text", "field": "dishName", "x": 100, "y": 990, "w": 880, "h": 160, "fontSize": 82, "fontWeight": 800, "color": "#30130d", "align": "center", "maxLines": 2 },
+    { "type": "text", "field": "slogan", "x": 136, "y": 1168, "w": 808, "h": 56, "fontSize": 34, "fontWeight": 500, "color": "#81512d", "align": "center", "maxLines": 1 },
+    { "type": "rect", "x": 108, "y": 1288, "w": 864, "h": 310, "radius": 22, "fill": "#b82b20" },
+    { "type": "price", "field": "promoPrice", "x": 150, "y": 1328, "w": 520, "h": 124, "fontSize": 104, "fontWeight": 900, "color": "#ffe071", "maxLines": 1 },
+    { "type": "price", "field": "price", "x": 158, "y": 1466, "w": 360, "h": 56, "fontSize": 32, "fontWeight": 500, "color": "#fff4d4", "prefix": "原价 ￥", "maxLines": 1 },
+    { "type": "text", "text": "扫码下单", "x": 720, "y": 1320, "w": 188, "h": 44, "fontSize": 30, "fontWeight": 700, "color": "#fff4d4", "align": "center", "maxLines": 1 },
+    { "type": "qrcode", "field": "qrcode", "x": 704, "y": 1360, "w": 220, "h": 220, "radius": 8, "fit": "contain", "placeholder": "二维码" },
+    { "type": "text", "text": "新鲜出餐 · 到店/外卖均可", "x": 142, "y": 1664, "w": 796, "h": 54, "fontSize": 32, "fontWeight": 600, "color": "#30130d", "align": "center", "maxLines": 1 }
+  ]
+}
+

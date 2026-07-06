@@ -1,0 +1,48 @@
+﻿@inherits LayoutComponentBase
+@inject NavigationManager Nav
+
+<div class="admin-shell">
+    <aside class="sidebar">
+        <div class="brand">
+            <span class="brand-icon">🍜</span>
+            <div class="brand-text">
+                <div class="brand-name">PosterMint</div>
+                <div class="brand-tag">餐饮海报运营台</div>
+            </div>
+        </div>
+
+        <nav class="side-nav">
+            <div class="nav-group">
+                <div class="nav-group-title">🏪 商户管理</div>
+                <a href="/admin/shops" class="@NavClass("/admin/shops")">商户列表</a>
+            </div>
+
+            <div class="nav-group">
+                <div class="nav-group-title">🎨 海报管理</div>
+                <a href="/" class="@NavClass("/")">海报设计</a>
+            </div>
+
+            <div class="nav-group nav-group--secondary">
+                <div class="nav-group-title">⚙️ 系统</div>
+                <a href="/setup/ai" class="@NavClass("/setup/ai")">AI 模型配置</a>
+            </div>
+        </nav>
+
+        <div class="sidebar-foot">
+            <a href="/admin/templates" class="foot-link" title="模板高级参数调整（一般不需要）">🔧 模板参数</a>
+        </div>
+    </aside>
+
+    <main class="admin-body">
+        @Body
+    </main>
+</div>
+
+@code {
+    private string NavClass(string path)
+    {
+        var current = new Uri(Nav.Uri).AbsolutePath;
+        if (path == "/") return current == "/" ? "nav-item active" : "nav-item";
+        return current.StartsWith(path) ? "nav-item active" : "nav-item";
+    }
+}

@@ -1,0 +1,263 @@
+@page "/setup/ai"
+@using PosterMint.Application.AI
+@using PosterMint.Application.Configs
+@inject IConfigService ConfigService
+@inject NavigationManager NavigationManager
+
+<PageTitle>AI 模型配置</PageTitle>
+
+<div class="page-hero">
+    <div>
+        <p class="eyebrow">SYSTEM</p>
+        <h1>AI 模型配置</h1>
+        <p class="page-sub">
+            这个系统的核心是"和 AI 说需求"。请先配置文本大模型和文生图模型，测试连接通过后即可使用。
+        </p>
+    </div>
+    <div class="status-strip">
+        <span class="status-pill @(_status.IsTextConfigured ? "is-active" : "is-disabled")">
+            <span class="status-dot"></span>文本模型 @(_status.IsTextConfigured ? "已配置" : "未配置")
+        </span>
+        <span class="status-pill @(_status.IsImageConfigured ? "is-active" : "is-disabled")">
+            <span class="status-dot"></span>文生图 @(_status.IsImageConfigured ? "已配置" : "未配置")
+        </span>
+    </div>
+</div>
+
+@if (_loading)
+{
+    <div class="empty">加载配置中…</div>
+}
+else
+{
+    <div class="setup-grid">
+        <!-- 文本模型 -->
+        <article class="setup-card">
+            <div class="card-header">
+                <div class="card-header-left">
+                    <div class="card-icon">💬</div>
+                    <div>
+                        <h2>文本大模型</h2>
+                        <p class="card-sub">用于对话理解和海报内容编辑</p>
+                    </div>
+                </div>
+                <span class="status-pill @(_status.IsTextConfigured ? "is-active" : "is-disabled")">
+                    @(_status.IsTextConfigured ? "已配置" : "未配置")
+                </span>
+            </div>
+
+            <div class="card-body">
+                <div class="form-row">
+                    <label>提供方</label>
+                    <select value="@_config.TextProvider" @onchange="OnTextProviderChanged">
+                        @foreach (var provider in LlmProviders.AllProviders)
+                        {
+                            <option value="@provider.Value">@provider.Label</option>
+                        }
+                    </select>
+                </div>
+
+                <div class="form-row">
+                    <label>Base URL <span class="label-hint">API 基础地址</span></label>
+                    <input @bind="_config.TextBaseUrl" placeholder="https://.../v1" />
+                </div>
+
+                <div class="form-row">
+                    <label>Chat URL <span class="label-hint">可选，留空则自动拼接 /chat/completions</span></label>
+                    <input @bind="_config.TextChatUrl" placeholder="留空即可" />
+                </div>
+
+                <div class="form-grid-2">
+                    <div class="form-row">
+                        <label>API Key</label>
+                        <input @bind="_config.TextApiKey" type="password" placeholder="sk-..." />
+                    </div>
+                    <div class="form-row">
+                        <label>Model 名称</label>
+                        <input @bind="_config.TextModel" placeholder="qwen-max / gpt-4o / MiniMax-Text-01" />
+                    </div>
+                </div>
+
+                <div class="test-bar">
+                    <button class="btn-ghost @(_textTesting ? "is-loading" : "")"
+                            @onclick="TestTextModelAsync" disabled="@_textTesting">
+                        @(_textTesting ? "测试中…" : "🔌 测试连接")
+                    </button>
+                    @if (_textTestResult is not null)
+                    {
+                        <div class="test-result @(_textTestResult.Success ? "is-success" : "is-error")">
+                            @if (_textTestResult.Success)
+                            {
+                                <span>✅ 连接成功</span>
+                                <span class="test-latency">@_textTestResult.LatencyMs ms</span>
+                            }
+                            else
+                            {
+                                <span>❌ @_textTestResult.Message</span>
+                            }
+                        </div>
+                    }
+                </div>
+            </div>
+        </article>
+
+        <!-- 文生图模型 -->
+        <article class="setup-card">
+            <div class="card-header">
+                <div class="card-header-left">
+                    <div class="card-icon">🎨</div>
+                    <div>
+                        <h2>文生图模型</h2>
+                        <p class="card-sub">用于生成海报背景图</p>
+                    </div>
+                </div>
+                <span class="status-pill @(_status.IsImageConfigured ? "is-active" : "is-disabled")">
+                    @(_status.IsImageConfigured ? "已配置" : "未配置")
+                </span>
+            </div>
+
+            <div class="card-body">
+                <div class="form-row">
+                    <label>提供方</label>
+                    <select value="@_config.ImageProvider" @onchange="OnImageProviderChanged">
+                        @foreach (var provider in LlmProviders.ImageProviders)
+                        {
+                            <option value="@provider.Value">@provider.Label</option>
+                        }
+                    </select>
+                </div>
+
+                <div class="form-row">
+                    <label>Base URL <span class="label-hint">图片生成接口地址</span></label>
+                    <input @bind="_config.ImageBaseUrl" placeholder="https://.../image_generation" />
+                </div>
+
+                <div class="form-grid-2">
+                    <div class="form-row">
+                        <label>API Key</label>
+                        <input @bind="_config.ImageApiKey" type="password" placeholder="sk-..." />
+                    </div>
+                    <div class="form-row">
+                        <label>Model 名称</label>
+                        <input @bind="_config.ImageModel" placeholder="wanx-v1 / image-01 等" />
+                    </div>
+                </div>
+
+                <div class="test-bar">
+                    <button class="btn-ghost @(_imageTesting ? "is-loading" : "")"
+                            @onclick="TestImageModelAsync" disabled="@_imageTesting">
+                        @(_imageTesting ? "测试中…" : "🔌 测试连接")
+                    </button>
+                    @if (_imageTestResult is not null)
+                    {
+                        <div class="test-result @(_imageTestResult.Success ? "is-success" : "is-error")">
+                            @if (_imageTestResult.Success)
+                            {
+                                <span>✅ 连接成功</span>
+                                <span class="test-latency">@_imageTestResult.LatencyMs ms</span>
+                            }
+                            else
+                            {
+                                <span>❌ @_imageTestResult.Message</span>
+                            }
+                        </div>
+                    }
+                </div>
+            </div>
+        </article>
+    </div>
+
+    <div class="save-bar">
+        @if (!string.IsNullOrWhiteSpace(_error))
+        {
+            <div class="save-error">❌ @_error</div>
+        }
+        <button class="btn-primary" @onclick="SaveAsync" disabled="@_saving">
+            @(_saving ? "保存中…" : "💾 保存配置")
+        </button>
+    </div>
+}
+
+@code {
+    [SupplyParameterFromQuery]
+    public string? ReturnUrl { get; set; }
+
+    private AiConfigurationDto _config = new();
+    private AiConfigurationStatusDto _status = new(false, false, false);
+    private bool _loading = true;
+    private bool _saving;
+    private bool _textTesting;
+    private bool _imageTesting;
+    private string? _error;
+    private AiTestResultDto? _textTestResult;
+    private AiTestResultDto? _imageTestResult;
+
+    protected override async Task OnInitializedAsync() => await LoadAsync();
+
+    private async Task LoadAsync()
+    {
+        _loading = true;
+        _error = null;
+        try
+        {
+            _config = await ConfigService.GetAiConfigurationAsync();
+            _status = await ConfigService.GetAiConfigurationStatusAsync();
+        }
+        catch (Exception ex) { _error = ex.Message; }
+        finally { _loading = false; }
+    }
+
+    private void OnTextProviderChanged(ChangeEventArgs args)
+    {
+        var provider = LlmProviders.AllProviders.FirstOrDefault(p => p.Value == args.Value?.ToString());
+        if (provider is not null)
+        {
+            _config.TextProvider = provider.Value;
+            _config.TextBaseUrl = provider.DefaultBaseUrl;
+            _config.TextModel = provider.DefaultModel;
+        }
+    }
+
+    private void OnImageProviderChanged(ChangeEventArgs args)
+    {
+        var provider = LlmProviders.ImageProviders.FirstOrDefault(p => p.Value == args.Value?.ToString());
+        if (provider is not null)
+        {
+            _config.ImageProvider = provider.Value;
+            _config.ImageBaseUrl = provider.DefaultBaseUrl;
+            _config.ImageModel = provider.DefaultModel;
+        }
+    }
+
+    private async Task TestTextModelAsync()
+    {
+        _textTesting = true;
+        _textTestResult = null;
+        try { _textTestResult = await ConfigService.TestTextModelAsync(); }
+        catch (Exception ex) { _textTestResult = new AiTestResultDto(false, _config.TextModel, 0, ex.Message); }
+        finally { _textTesting = false; }
+    }
+
+    private async Task TestImageModelAsync()
+    {
+        _imageTesting = true;
+        _imageTestResult = null;
+        try { _imageTestResult = await ConfigService.TestImageModelAsync(); }
+        catch (Exception ex) { _imageTestResult = new AiTestResultDto(false, _config.ImageModel, 0, ex.Message); }
+        finally { _imageTesting = false; }
+    }
+
+    private async Task SaveAsync()
+    {
+        _saving = true;
+        _error = null;
+        try
+        {
+            await ConfigService.SaveAiConfigurationAsync(_config);
+            _status = await ConfigService.GetAiConfigurationStatusAsync();
+            NavigationManager.NavigateTo(string.IsNullOrWhiteSpace(ReturnUrl) ? "/" : ReturnUrl!);
+        }
+        catch (Exception ex) { _error = ex.Message; }
+        finally { _saving = false; }
+    }
+}

@@ -1,0 +1,230 @@
+@page "/admin/shops"
+@using PosterMint.Application.Shops
+@inject IShopService ShopService
+@inject IJSRuntime JS
+
+<PageTitle>商户管理</PageTitle>
+
+<div class="page-hero">
+    <div>
+        <p class="eyebrow">MERCHANTS</p>
+        <h1>商户管理</h1>
+        <p class="page-sub">管理平台上的餐饮商户账号、联系方式和状态。</p>
+    </div>
+    <button class="btn-primary" @onclick="OpenCreate">+ 新增商户</button>
+</div>
+
+<div class="toolbar">
+    <input class="search-input" placeholder="搜索店名 / 联系人 / 电话" @bind="_keyword" @bind:event="oninput" @onkeydown="OnKeywordKey" />
+    <button class="btn-ghost" @onclick="LoadAsync">搜索</button>
+    <span class="muted-count">共 @_shops.Count 家商户</span>
+</div>
+
+@if (_loading)
+{
+    <div class="empty">加载中…</div>
+}
+else if (_shops.Count == 0)
+{
+    <div class="empty">
+        <div class="empty-icon">🏪</div>
+        <div>还没有商户，点击右上角「+ 新增商户」创建第一个。</div>
+    </div>
+}
+else
+{
+    <div class="table-card">
+        <table class="admin-table">
+            <thead>
+                <tr>
+                    <th style="width:180px">店铺名称</th>
+                    <th style="width:120px">联系人</th>
+                    <th style="width:140px">联系电话</th>
+                    <th>地址</th>
+                    <th style="width:80px">状态</th>
+                    <th style="width:140px">更新时间</th>
+                    <th style="width:140px"></th>
+                </tr>
+            </thead>
+            <tbody>
+                @foreach (var shop in _shops)
+                {
+                    <tr>
+                        <td>
+                            <div class="cell-title">@shop.Name</div>
+                            <div class="cell-sub">@shop.ShopKey</div>
+                        </td>
+                        <td>@(shop.ContactName ?? "-")</td>
+                        <td>@(shop.ContactPhone ?? "-")</td>
+                        <td class="ellipsis">@(shop.Address ?? "-")</td>
+                        <td>
+                            <span class="status-pill @(shop.Status == "Active" ? "is-active" : "is-disabled")">
+                                @(shop.Status == "Active" ? "启用中" : "已停用")
+                            </span>
+                        </td>
+                        <td class="muted-time">@shop.UpdatedAt.LocalDateTime.ToString("yyyy-MM-dd HH:mm")</td>
+                        <td class="actions">
+                            <button class="btn-link" @onclick="() => OpenEdit(shop)">编辑</button>
+                            <button class="btn-link danger" @onclick="() => DeleteAsync(shop)">删除</button>
+                        </td>
+                    </tr>
+                }
+            </tbody>
+        </table>
+    </div>
+}
+
+@if (_editing != null)
+{
+    <div class="modal-mask" @onclick="CloseModal">
+        <div class="modal" @onclick:stopPropagation>
+            <div class="modal-header">
+                <h2>@(_editingId == null ? "新增商户" : "编辑商户")</h2>
+                <button class="modal-close" @onclick="CloseModal">×</button>
+            </div>
+            <div class="modal-body">
+                <div class="form-row">
+                    <label>店铺名称 <span class="req">*</span></label>
+                    <input @bind="_editing.Name" placeholder="必填，如：老街小厨" />
+                </div>
+                <div class="form-grid">
+                    <div class="form-row">
+                        <label>联系人</label>
+                        <input @bind="_editing.ContactName" placeholder="选填" />
+                    </div>
+                    <div class="form-row">
+                        <label>联系电话</label>
+                        <input @bind="_editing.ContactPhone" placeholder="选填" />
+                    </div>
+                </div>
+                <div class="form-row">
+                    <label>店铺地址</label>
+                    <input @bind="_editing.Address" placeholder="选填" />
+                </div>
+                <div class="form-grid">
+                    <div class="form-row">
+                        <label>行业</label>
+                        <input @bind="_editing.Industry" placeholder="餐饮" />
+                    </div>
+                    <div class="form-row">
+                        <label>状态</label>
+                        <select @bind="_editing.Status">
+                            <option value="Active">启用中</option>
+                            <option value="Disabled">已停用</option>
+                        </select>
+                    </div>
+                </div>
+                <div class="form-row">
+                    <label>备注</label>
+                    <textarea @bind="_editing.Remark" rows="3" placeholder="选填"></textarea>
+                </div>
+                @if (!string.IsNullOrEmpty(_error))
+                {
+                    <div class="modal-error">❌ @_error</div>
+                }
+            </div>
+            <div class="modal-footer">
+                <button class="btn-ghost" @onclick="CloseModal">取消</button>
+                <button class="btn-primary" @onclick="SaveAsync" disabled="@_saving">
+                    @(_saving ? "保存中…" : "保存")
+                </button>
+            </div>
+        </div>
+    </div>
+}
+
+@code {
+    private List<ShopDto> _shops = new();
+    private bool _loading = true;
+    private string? _keyword;
+
+    // 编辑态
+    private ShopUpsertRequest? _editing;
+    private int? _editingId;
+    private bool _saving;
+    private string? _error;
+
+    protected override async Task OnInitializedAsync() => await LoadAsync();
+
+    private async Task LoadAsync()
+    {
+        _loading = true;
+        try
+        {
+            var list = await ShopService.ListAsync(_keyword);
+            _shops = list.ToList();
+        }
+        finally
+        {
+            _loading = false;
+        }
+    }
+
+    private async Task OnKeywordKey(KeyboardEventArgs e)
+    {
+        if (e.Key == "Enter") await LoadAsync();
+    }
+
+    private void OpenCreate()
+    {
+        _editingId = null;
+        _editing = new ShopUpsertRequest { Industry = "餐饮", Status = "Active" };
+        _error = null;
+    }
+
+    private void OpenEdit(ShopDto shop)
+    {
+        _editingId = shop.Id;
+        _editing = new ShopUpsertRequest
+        {
+            Name = shop.Name,
+            ContactName = shop.ContactName,
+            ContactPhone = shop.ContactPhone,
+            Address = shop.Address,
+            Industry = shop.Industry,
+            Status = shop.Status,
+            Remark = shop.Remark
+        };
+        _error = null;
+    }
+
+    private void CloseModal()
+    {
+        _editing = null;
+        _editingId = null;
+        _error = null;
+    }
+
+    private async Task SaveAsync()
+    {
+        if (_editing is null) return;
+        _saving = true;
+        _error = null;
+        try
+        {
+            if (_editingId is null)
+                await ShopService.CreateAsync(_editing);
+            else
+                await ShopService.UpdateAsync(_editingId.Value, _editing);
+            _editing = null;
+            _editingId = null;
+            await LoadAsync();
+        }
+        catch (Exception ex)
+        {
+            _error = ex.Message;
+        }
+        finally
+        {
+            _saving = false;
+        }
+    }
+
+    private async Task DeleteAsync(ShopDto shop)
+    {
+        var confirmed = await JS.InvokeAsync<bool>("confirm", $"确定删除商户「{shop.Name}」？此操作不可撤销。");
+        if (!confirmed) return;
+        await ShopService.DeleteAsync(shop.Id);
+        await LoadAsync();
+    }
+}
