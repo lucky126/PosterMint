@@ -1,0 +1,496 @@
+@page "/admin/psp-templates/import"
+@using System.Text.Json
+@using System.Text.Json.Nodes
+@using PosterMint.Application.PspTemplates
+@using PosterMint.Application.Shops
+@using PosterMint.Domain.Enums
+@inject IPspTemplateService PspService
+@inject IShopService ShopService
+@inject NavigationManager Nav
+@inject IJSRuntime JS
+
+<PageTitle>导入 PSP 模板</PageTitle>
+
+<div class="page-hero import-hero">
+    <div>
+        <p class="eyebrow">IMPORT · PSP-v1</p>
+        <h1>从 JSON 导入模板</h1>
+        <p class="page-sub">CC 工具产出 JSON → 粘贴 → 实时校验 → 一键入库</p>
+    </div>
+    <div class="hero-actions">
+        <button class="btn-ghost" @onclick="Back">← 返回列表</button>
+    </div>
+</div>
+
+<div class="import-wrap">
+
+    <!-- Step 1: 归属 -->
+    <section class="step-card">
+        <div class="step-head">
+            <span class="step-num">1</span>
+            <h2>选择归属</h2>
+        </div>
+        <div class="own-picker">
+            <button type="button"
+                    class="own-card @(_ownership == TemplateOwnership.Category ? "is-active" : "")"
+                    @onclick="() => SetOwnership(TemplateOwnership.Category)">
+                <div class="own-ico">📂</div>
+                <div class="own-title">行业通用</div>
+                <div class="own-desc">按行业分类挂载，同类商铺都能用</div>
+            </button>
+            <button type="button"
+                    class="own-card @(_ownership == TemplateOwnership.Shop ? "is-active" : "")"
+                    @onclick="() => SetOwnership(TemplateOwnership.Shop)">
+                <div class="own-ico">🏪</div>
+                <div class="own-title">商铺专属</div>
+                <div class="own-desc">仅指定商铺可见，例如华为、海底捞定制</div>
+            </button>
+        </div>
+
+        <div class="sub-picker">
+            @if (_ownership == TemplateOwnership.Shop)
+            {
+                <label class="sub-label">归属商铺 <span class="req">*</span></label>
+                <select class="sub-select" @bind="_shopId">
+                    <option value="0">— 请选择商铺 —</option>
+                    @foreach (var s in _shops)
+                    {
+                        <option value="@s.Id">@s.Name（@s.Industry）</option>
+                    }
+                </select>
+            }
+            else
+            {
+                <label class="sub-label">行业分类 <span class="req">*</span></label>
+                <select class="sub-select" @bind="_scene">
+                    <option value="@TemplateSceneType.Menu">🍜 菜单</option>
+                    <option value="@TemplateSceneType.SingleDish">🍤 单菜品</option>
+                    <option value="@TemplateSceneType.StorePromo">🏬 门店宣传</option>
+                    <option value="@TemplateSceneType.Festival">🎉 节庆活动</option>
+                    <option value="@TemplateSceneType.Custom">✨ 自定义</option>
+                </select>
+            }
+        </div>
+    </section>
+
+    <!-- Step 2: PSP JSON -->
+    <section class="step-card">
+        <div class="step-head">
+            <span class="step-num">2</span>
+            <h2>粘贴 PSP JSON</h2>
+            <div class="head-right">
+                <button class="chip-btn" title="填入 PSP-v1 最小示例" @onclick="LoadExample">📋 粘贴示例</button>
+                <button class="chip-btn" title="美化格式" @onclick="Beautify" disabled="@(string.IsNullOrWhiteSpace(_pspText))">🎨 格式化</button>
+                <button class="chip-btn" title="清空" @onclick="ClearJson" disabled="@(string.IsNullOrWhiteSpace(_pspText))">🗑 清空</button>
+            </div>
+        </div>
+
+        <div class="json-two-col">
+            <div class="json-col json-col--input">
+                <textarea class="psp-input"
+                          placeholder='粘贴以 &quot;schema&quot;: &quot;PSP-v1&quot; 开头的 JSON…'
+                          spellcheck="false"
+                          @bind="_pspText"
+                          @bind:event="oninput"
+                          @bind:after="OnPspChanged"></textarea>
+            </div>
+
+            <aside class="json-col json-col--check">
+                @if (string.IsNullOrWhiteSpace(_pspText))
+                {
+                    <div class="empty-check">
+                        <div class="empty-check__ico">📄</div>
+                        <p>等待 JSON…</p>
+                        <button class="btn-inline" @onclick="LoadExample">用示例 JSON 试一下</button>
+                    </div>
+                }
+                else if (_parseError is not null)
+                {
+                    <div class="badge badge--bad">
+                        <span class="badge__ico">✗</span>
+                        <div>
+                            <div class="badge__title">JSON 解析失败</div>
+                            <div class="badge__sub">不是合法的 JSON</div>
+                        </div>
+                    </div>
+                    <ul class="err-list"><li>@_parseError</li></ul>
+                }
+                else if (_lastValidation is null)
+                {
+                    <div class="side-hint">校验中…</div>
+                }
+                else if (_lastValidation.IsValid)
+                {
+                    <div class="badge badge--good">
+                        <span class="badge__ico">✓</span>
+                        <div>
+                            <div class="badge__title">PSP 有效</div>
+                            <div class="badge__sub">@_lastValidation.SchemaVersion · @_lastValidation.SlotCount 个 slot 可 AI 替换</div>
+                        </div>
+                    </div>
+
+                    <div class="stat-grid">
+                        <div class="stat">
+                            <div class="stat-num">@_canvasW × @_canvasH</div>
+                            <div class="stat-lbl">画布</div>
+                        </div>
+                        <div class="stat">
+                            <div class="stat-num">@_lastValidation.SlotCount</div>
+                            <div class="stat-lbl">可编辑 slot</div>
+                        </div>
+                        <div class="stat">
+                            <div class="stat-num">@_totalLayers</div>
+                            <div class="stat-lbl">总图层</div>
+                        </div>
+                        <div class="stat">
+                            <div class="stat-num">@_groupCount</div>
+                            <div class="stat-lbl">重复组</div>
+                        </div>
+                    </div>
+
+                    @if (_layerTypeCounts.Count > 0)
+                    {
+                        <div class="type-row">
+                            @foreach (var kv in _layerTypeCounts.OrderByDescending(x => x.Value))
+                            {
+                                <span class="type-chip type-chip--@kv.Key">@LayerLabel(kv.Key) × @kv.Value</span>
+                            }
+                        </div>
+                    }
+
+                    @if (_bboxes.Count > 0 && _canvasW > 0 && _canvasH > 0)
+                    {
+                        <div class="mini-preview">
+                            <div class="mini-preview__title">布局示意</div>
+                            @{
+                                // 以 220px 宽为上限，等比缩放
+                                var maxW = 220d;
+                                var scale = Math.Min(maxW / _canvasW, 260d / _canvasH);
+                                var pW = _canvasW * scale;
+                                var pH = _canvasH * scale;
+                            }
+                            <svg class="mini-svg" width="@pW.ToString("0.##")" height="@pH.ToString("0.##")" viewBox="0 0 @_canvasW @_canvasH" preserveAspectRatio="xMidYMid meet">
+                                <rect x="0" y="0" width="@_canvasW" height="@_canvasH" fill="#eef1f5" />
+                                @foreach (var b in _bboxes)
+                                {
+                                    <rect x="@b.X" y="@b.Y" width="@b.W" height="@b.H"
+                                          fill="@BoxFill(b.Kind)" stroke="@BoxStroke(b.Kind)" stroke-width="4"
+                                          rx="8" ry="8" />
+                                }
+                            </svg>
+                        </div>
+                    }
+                }
+                else
+                {
+                    <div class="badge badge--bad">
+                        <span class="badge__ico">!</span>
+                        <div>
+                            <div class="badge__title">有 @_lastValidation.Errors.Count 项错误</div>
+                            <div class="badge__sub">修完再入库</div>
+                        </div>
+                    </div>
+                    <ul class="err-list">
+                        @foreach (var err in _lastValidation.Errors)
+                        {
+                            <li>@err</li>
+                        }
+                    </ul>
+                }
+            </aside>
+        </div>
+    </section>
+
+    <!-- Step 3: 元信息 -->
+    <section class="step-card">
+        <div class="step-head">
+            <span class="step-num">3</span>
+            <h2>补充信息 <span class="head-hint">留空则从 PSP JSON 自动取</span></h2>
+        </div>
+        <div class="meta-grid">
+            <div class="field">
+                <label>TemplateKey</label>
+                <input type="text" @bind="_templateKey" placeholder="自动取 PSP.id" />
+            </div>
+            <div class="field">
+                <label>模板名称</label>
+                <input type="text" @bind="_name" placeholder="自动取 PSP.name" />
+            </div>
+            <div class="field field-wide">
+                <label>描述</label>
+                <input type="text" @bind="_description" placeholder="可选，一句话说明这个模板的用途" />
+            </div>
+            <div class="field field-wide">
+                <label>预览图 URL</label>
+                <input type="text" @bind="_previewImage" placeholder="可选，如 /assets/preview/xxx.png" />
+            </div>
+        </div>
+    </section>
+
+    <!-- 底部提交栏 -->
+    <div class="footer-bar">
+        @if (_serverError is not null)
+        {
+            <div class="server-error">
+                <strong>入库失败：</strong>@_serverError
+            </div>
+        }
+        <div class="footer-actions">
+            <button class="btn-primary btn-cta"
+                    disabled="@(!CanSubmit)"
+                    @onclick="SubmitAsync">
+                @if (_submitting)
+                {
+                    <span>入库中…</span>
+                }
+                else
+                {
+                    <span>入库 →</span>
+                }
+            </button>
+            <button class="btn-ghost" @onclick="Back">取消</button>
+        </div>
+    </div>
+
+</div>
+
+@code {
+    private IReadOnlyList<ShopDto> _shops = [];
+
+    private TemplateOwnership _ownership = TemplateOwnership.Category;
+    private int _shopId;
+    private TemplateSceneType _scene = TemplateSceneType.Menu;
+    private string _templateKey = string.Empty;
+    private string _name = string.Empty;
+    private string _description = string.Empty;
+    private string _previewImage = string.Empty;
+    private string _pspText = string.Empty;
+
+    private PspValidationResult? _lastValidation;
+    private string? _parseError;
+    private string? _serverError;
+    private bool _submitting;
+
+    // 校验成功时抽取的可视化信息
+    private int _canvasW;
+    private int _canvasH;
+    private int _totalLayers;
+    private int _groupCount;
+    private Dictionary<string, int> _layerTypeCounts = new();
+    private List<BBox> _bboxes = new();
+
+    private bool CanSubmit =>
+        !_submitting
+        && _lastValidation is { IsValid: true }
+        && (_ownership != TemplateOwnership.Shop || _shopId > 0);
+
+    protected override async Task OnInitializedAsync()
+    {
+        _shops = await ShopService.ListAsync();
+    }
+
+    private void SetOwnership(TemplateOwnership o)
+    {
+        _ownership = o;
+        if (o == TemplateOwnership.Category) _shopId = 0;
+    }
+
+    private void OnPspChanged()
+    {
+        _serverError = null;
+        _parseError = null;
+        _canvasW = _canvasH = _totalLayers = _groupCount = 0;
+        _layerTypeCounts.Clear();
+        _bboxes.Clear();
+
+        if (string.IsNullOrWhiteSpace(_pspText))
+        {
+            _lastValidation = null;
+            return;
+        }
+
+        JsonNode? node;
+        try
+        {
+            node = JsonNode.Parse(_pspText);
+        }
+        catch (Exception ex)
+        {
+            _parseError = ex.Message;
+            _lastValidation = null;
+            return;
+        }
+
+        _lastValidation = PspService.Validate(node);
+
+        if (_lastValidation.IsValid && node is JsonObject psp)
+        {
+            var canvas = psp["canvas"] as JsonObject;
+            _canvasW = canvas?["w"]?.GetValue<int>() ?? 0;
+            _canvasH = canvas?["h"]?.GetValue<int>() ?? 0;
+
+            if (psp["layers"] is JsonArray layers)
+            {
+                WalkForStats(layers, 0, 0);
+            }
+        }
+    }
+
+    private void WalkForStats(JsonArray layers, int offsetX, int offsetY)
+    {
+        foreach (var l in layers.OfType<JsonObject>())
+        {
+            _totalLayers++;
+            var type = l["type"]?.GetValue<string>() ?? "?";
+            _layerTypeCounts[type] = _layerTypeCounts.GetValueOrDefault(type) + 1;
+
+            if (type == "group") _groupCount++;
+
+            if (l["bbox"] is JsonArray b && b.Count == 4)
+            {
+                _bboxes.Add(new BBox(
+                    offsetX + (b[0]?.GetValue<int>() ?? 0),
+                    offsetY + (b[1]?.GetValue<int>() ?? 0),
+                    b[2]?.GetValue<int>() ?? 0,
+                    b[3]?.GetValue<int>() ?? 0,
+                    type));
+            }
+
+            // 递归进 group 内部的 itemTemplate.layers（bbox 相对 group，需要偏移）
+            if (type == "group"
+                && l["itemTemplate"] is JsonObject tpl
+                && tpl["layers"] is JsonArray sub
+                && l["bbox"] is JsonArray gb && gb.Count == 4)
+            {
+                var gx = offsetX + (gb[0]?.GetValue<int>() ?? 0);
+                var gy = offsetY + (gb[1]?.GetValue<int>() ?? 0);
+                WalkForStats(sub, gx, gy);
+            }
+        }
+    }
+
+    private async Task SubmitAsync()
+    {
+        _serverError = null;
+        _submitting = true;
+        try
+        {
+            var psp = JsonNode.Parse(_pspText) as JsonObject
+                ?? throw new InvalidOperationException("PSP JSON 顶层必须是对象。");
+
+            var request = new PspTemplateImportRequest
+            {
+                Ownership = _ownership,
+                ShopId = _ownership == TemplateOwnership.Shop ? _shopId : null,
+                Scene = _ownership == TemplateOwnership.Category ? _scene : TemplateSceneType.Custom,
+                TemplateKey = string.IsNullOrWhiteSpace(_templateKey) ? null : _templateKey.Trim(),
+                Name = string.IsNullOrWhiteSpace(_name) ? null : _name.Trim(),
+                Description = string.IsNullOrWhiteSpace(_description) ? null : _description.Trim(),
+                PreviewImage = string.IsNullOrWhiteSpace(_previewImage) ? null : _previewImage.Trim(),
+                Psp = psp
+            };
+
+            await PspService.ImportAsync(request);
+            Nav.NavigateTo("/admin/psp-templates");
+        }
+        catch (PspValidationException ex)
+        {
+            _lastValidation = ex.Result;
+            _serverError = "PSP 校验未通过，请查看右侧错误列表。";
+        }
+        catch (Exception ex)
+        {
+            _serverError = ex.Message;
+        }
+        finally
+        {
+            _submitting = false;
+        }
+    }
+
+    private void ClearJson()
+    {
+        _pspText = string.Empty;
+        OnPspChanged();
+    }
+
+    private void Beautify()
+    {
+        if (string.IsNullOrWhiteSpace(_pspText)) return;
+        try
+        {
+            var node = JsonNode.Parse(_pspText);
+            _pspText = node?.ToJsonString(new JsonSerializerOptions
+            {
+                WriteIndented = true,
+                Encoder = System.Text.Encodings.Web.JavaScriptEncoder.UnsafeRelaxedJsonEscaping
+            }) ?? _pspText;
+            OnPspChanged();
+        }
+        catch
+        {
+            // 有语法错就不动
+        }
+    }
+
+    private void LoadExample()
+    {
+        _pspText = ExampleJson;
+        OnPspChanged();
+    }
+
+    private void Back() => Nav.NavigateTo("/admin/psp-templates");
+
+    // ----------- helpers -----------
+    private record BBox(int X, int Y, int W, int H, string Kind);
+
+    private static string LayerLabel(string type) => type switch
+    {
+        "background" => "背景",
+        "text" => "文本",
+        "image" => "图片",
+        "group" => "重复组",
+        _ => type
+    };
+
+    private static string BoxFill(string kind) => kind switch
+    {
+        "text" => "rgba(76,175,80,.22)",
+        "image" => "rgba(33,150,243,.22)",
+        "group" => "rgba(255,152,0,.14)",
+        _ => "rgba(120,120,120,.15)"
+    };
+
+    private static string BoxStroke(string kind) => kind switch
+    {
+        "text" => "#4caf50",
+        "image" => "#2196f3",
+        "group" => "#ff9800",
+        _ => "#8a94a6"
+    };
+
+    private const string ExampleJson = @"{
+  ""schema"": ""PSP-v1"",
+  ""id"": ""minimal-single-dish"",
+  ""name"": ""单菜招牌（最小示例）"",
+  ""canvas"": { ""w"": 1080, ""h"": 1440, ""unit"": ""px"" },
+  ""layers"": [
+    { ""type"": ""background"", ""fill"": ""#8B0000"" },
+    { ""type"": ""text"", ""id"": ""s_shop_name"", ""path"": ""shop.name"",
+      ""bbox"": [60, 60, 960, 100],
+      ""font"": { ""size"": 72, ""weight"": 700, ""color"": ""#FFF3D9"" },
+      ""align"": ""center"", ""value"": ""餐厅名"", ""editable"": true, ""overflow"": ""shrink"" },
+    { ""type"": ""image"", ""id"": ""s_hero_photo"", ""path"": ""hero.image"",
+      ""bbox"": [140, 240, 800, 800],
+      ""fit"": ""cover"", ""radius"": 24, ""value"": null, ""editable"": true },
+    { ""type"": ""text"", ""id"": ""s_hero_name"", ""path"": ""hero.name"",
+      ""bbox"": [60, 1080, 960, 80],
+      ""font"": { ""size"": 56, ""weight"": 700, ""color"": ""#FFF3D9"" },
+      ""align"": ""center"", ""value"": ""招牌菜名"", ""editable"": true, ""overflow"": ""shrink"" },
+    { ""type"": ""text"", ""id"": ""s_hero_price"", ""path"": ""hero.price"",
+      ""bbox"": [60, 1200, 960, 100],
+      ""font"": { ""size"": 96, ""weight"": 800, ""color"": ""#FFD700"" },
+      ""align"": ""center"", ""value"": ""88"", ""prefix"": ""¥"", ""editable"": true }
+  ]
+}";
+}

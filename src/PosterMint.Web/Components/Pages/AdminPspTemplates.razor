@@ -1,0 +1,227 @@
+@page "/admin/psp-templates"
+@using System.Text.Json.Nodes
+@using PosterMint.Application.PspTemplates
+@using PosterMint.Application.Shops
+@using PosterMint.Domain.Enums
+@inject IPspTemplateService PspService
+@inject IShopService ShopService
+@inject NavigationManager Nav
+@inject IJSRuntime JS
+
+<PageTitle>PSP 模板</PageTitle>
+
+<div class="page-hero">
+    <div>
+        <p class="eyebrow">PSP TEMPLATES</p>
+        <h1>PSP 模板</h1>
+        <p class="page-sub">CC 类工具（Claude Code / Cursor）产出的模板 JSON 库存。归属 = Shop 商铺专属 或 Category 行业通用。</p>
+    </div>
+    <button class="btn-primary" @onclick="OpenImport">+ 从 JSON 导入</button>
+</div>
+
+<div class="toolbar">
+    <input class="search-input" placeholder="搜索名称 / TemplateKey" @bind="_keyword" @bind:event="oninput" @onkeydown="OnKeywordKey" />
+
+    <select class="filter-select" @bind="_ownership" @bind:after="LoadAsync">
+        <option value="">全部归属</option>
+        <option value="@TemplateOwnership.Shop">🏪 商铺专属</option>
+        <option value="@TemplateOwnership.Category">📂 行业通用</option>
+    </select>
+
+    <select class="filter-select" @bind="_shopId" @bind:after="LoadAsync">
+        <option value="">全部商铺</option>
+        @foreach (var shop in _shops)
+        {
+            <option value="@shop.Id">@shop.Name</option>
+        }
+    </select>
+
+    <select class="filter-select" @bind="_scene" @bind:after="LoadAsync">
+        <option value="">全部分类</option>
+        <option value="@TemplateSceneType.SingleDish">单菜品</option>
+        <option value="@TemplateSceneType.Menu">菜单</option>
+        <option value="@TemplateSceneType.StorePromo">门店宣传</option>
+        <option value="@TemplateSceneType.Festival">节庆活动</option>
+        <option value="@TemplateSceneType.Custom">自定义</option>
+    </select>
+
+    <button class="btn-ghost" @onclick="LoadAsync">搜索</button>
+    <span class="muted-count">共 @_rows.Count 个模板</span>
+</div>
+
+@if (_loading)
+{
+    <div class="empty">加载中…</div>
+}
+else if (_rows.Count == 0)
+{
+    <div class="empty">
+        <div class="empty-icon">🧩</div>
+        <div>还没有 PSP 模板。点击右上角「+ 从 JSON 导入」把 CC 工具产出的模板 JSON 粘进来。</div>
+    </div>
+}
+else
+{
+    <div class="table-card">
+        <table class="admin-table">
+            <thead>
+                <tr>
+                    <th style="width:60px">预览</th>
+                    <th>名称</th>
+                    <th style="width:180px">TemplateKey</th>
+                    <th style="width:120px">归属</th>
+                    <th style="width:120px">商铺</th>
+                    <th style="width:100px">分类</th>
+                    <th style="width:80px">slot 数</th>
+                    <th style="width:100px">Schema</th>
+                    <th style="width:150px">更新时间</th>
+                    <th style="width:100px"></th>
+                </tr>
+            </thead>
+            <tbody>
+                @foreach (var t in _rows)
+                {
+                    <tr>
+                        <td>
+                            @if (!string.IsNullOrWhiteSpace(t.PreviewImage))
+                            {
+                                <img class="mini-thumb" src="@t.PreviewImage" alt="preview" />
+                            }
+                            else
+                            {
+                                <div class="mini-thumb mini-thumb--empty">—</div>
+                            }
+                        </td>
+                        <td>
+                            <div class="row-title">@t.Name</div>
+                            @if (!string.IsNullOrWhiteSpace(t.Description))
+                            {
+                                <div class="row-sub">@t.Description</div>
+                            }
+                        </td>
+                        <td><code class="tkey">@t.TemplateKey</code></td>
+                        <td>
+                            @if (t.Ownership == TemplateOwnership.Shop)
+                            {
+                                <span class="pill pill--shop">🏪 商铺专属</span>
+                            }
+                            else
+                            {
+                                <span class="pill pill--category">📂 行业通用</span>
+                            }
+                        </td>
+                        <td>@(t.ShopName ?? "—")</td>
+                        <td>@SceneText(t.Scene)</td>
+                        <td>@t.SlotCount</td>
+                        <td><code>@t.SchemaVersion</code></td>
+                        <td>@t.UpdatedAt.LocalDateTime.ToString("yyyy-MM-dd HH:mm")</td>
+                        <td>
+                            <button class="btn-link" @onclick="() => ViewDetail(t.Id)">查看</button>
+                            <button class="btn-link btn-link--danger" @onclick="() => DeleteAsync(t.Id, t.Name)">删除</button>
+                        </td>
+                    </tr>
+                }
+            </tbody>
+        </table>
+    </div>
+}
+
+@if (_detail is not null)
+{
+    <div class="modal-mask" @onclick="CloseDetail">
+        <div class="modal modal--wide" @onclick:stopPropagation>
+            <header class="modal-head">
+                <h3>@_detail.Name <small class="tkey">@_detail.TemplateKey</small></h3>
+                <button class="icon-btn" @onclick="CloseDetail">✕</button>
+            </header>
+            <div class="modal-body">
+                <dl class="meta-list">
+                    <div><dt>归属</dt><dd>@(_detail.Ownership == TemplateOwnership.Shop ? $"🏪 {_detail.ShopName}" : "📂 行业通用")</dd></div>
+                    <div><dt>分类</dt><dd>@SceneText(_detail.Scene)</dd></div>
+                    <div><dt>Schema</dt><dd><code>@_detail.SchemaVersion</code></dd></div>
+                    <div><dt>Slot 数</dt><dd>@_detail.SlotCount</dd></div>
+                    <div><dt>创建</dt><dd>@_detail.CreatedAt.LocalDateTime.ToString("yyyy-MM-dd HH:mm")</dd></div>
+                    <div><dt>更新</dt><dd>@_detail.UpdatedAt.LocalDateTime.ToString("yyyy-MM-dd HH:mm")</dd></div>
+                </dl>
+                <label class="json-label">PSP JSON</label>
+                <textarea class="json-view" readonly>@FormatJson(_detail.Psp)</textarea>
+            </div>
+        </div>
+    </div>
+}
+
+@code {
+    private IReadOnlyList<PspTemplateSummaryDto> _rows = [];
+    private IReadOnlyList<ShopDto> _shops = [];
+    private PspTemplateDetailDto? _detail;
+    private string _keyword = string.Empty;
+    private string _ownership = string.Empty;
+    private string _shopId = string.Empty;
+    private string _scene = string.Empty;
+    private bool _loading = true;
+
+    protected override async Task OnInitializedAsync()
+    {
+        _shops = await ShopService.ListAsync();
+        await LoadAsync();
+    }
+
+    private async Task LoadAsync()
+    {
+        _loading = true;
+        StateHasChanged();
+
+        var filter = new PspTemplateFilter(
+            Ownership: Enum.TryParse<TemplateOwnership>(_ownership, out var o) ? o : null,
+            ShopId: int.TryParse(_shopId, out var s) ? s : null,
+            Scene: Enum.TryParse<TemplateSceneType>(_scene, out var sc) ? sc : null,
+            Keyword: string.IsNullOrWhiteSpace(_keyword) ? null : _keyword.Trim());
+
+        _rows = await PspService.ListAsync(filter);
+        _loading = false;
+    }
+
+    private async Task OnKeywordKey(KeyboardEventArgs e)
+    {
+        if (e.Key == "Enter")
+        {
+            await LoadAsync();
+        }
+    }
+
+    private void OpenImport() => Nav.NavigateTo("/admin/psp-templates/import");
+
+    private async Task ViewDetail(int id)
+    {
+        _detail = await PspService.GetAsync(id);
+    }
+
+    private void CloseDetail() => _detail = null;
+
+    private async Task DeleteAsync(int id, string name)
+    {
+        var ok = await JS.InvokeAsync<bool>("confirm", $"确定删除模板「{name}」？此操作不可撤销。");
+        if (!ok) return;
+        await PspService.DeleteAsync(id);
+        await LoadAsync();
+    }
+
+    private static string SceneText(TemplateSceneType s) => s switch
+    {
+        TemplateSceneType.SingleDish => "单菜品",
+        TemplateSceneType.Menu => "菜单",
+        TemplateSceneType.StorePromo => "门店宣传",
+        TemplateSceneType.Festival => "节庆活动",
+        _ => "自定义"
+    };
+
+    private static string FormatJson(JsonNode node)
+    {
+        var options = new System.Text.Json.JsonSerializerOptions
+        {
+            WriteIndented = true,
+            Encoder = System.Text.Encodings.Web.JavaScriptEncoder.UnsafeRelaxedJsonEscaping
+        };
+        return node.ToJsonString(options);
+    }
+}

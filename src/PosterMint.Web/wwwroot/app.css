@@ -54,3 +54,184 @@ code {
     background: rgba(177, 70, 50, 0.08);
     font-size: 0.95em;
 }
+
+/* ============================================================
+   Admin 通用样式（Shops / PspTemplates / 之后所有后台管理页共享）
+   -- 抄自 AdminShops.razor.css，下移到全局供其他组件复用。
+   页面组件的 .razor.css 里只放该页独有的样式。
+============================================================ */
+
+.page-hero {
+    display: flex;
+    justify-content: space-between;
+    align-items: flex-end;
+    padding: 1.75rem 2rem 1rem;
+    background: #fff;
+    border-bottom: 1px solid #eef0f2;
+}
+
+.page-hero .eyebrow {
+    margin: 0 0 0.25rem;
+    color: #4caf50;
+    font-size: 0.75rem;
+    font-weight: 700;
+    letter-spacing: 0.1em;
+}
+
+.page-hero h1 {
+    margin: 0;
+    font-size: 1.5rem;
+    color: #1e2530;
+}
+
+.page-sub {
+    margin: 0.35rem 0 0;
+    color: #6c7484;
+    font-size: 0.88rem;
+}
+
+.toolbar {
+    display: flex;
+    align-items: center;
+    gap: 0.6rem;
+    padding: 1rem 2rem;
+    background: #fff;
+    border-bottom: 1px solid #eef0f2;
+}
+
+.search-input {
+    flex: 0 0 320px;
+    padding: 0.5rem 0.75rem;
+    border: 1px solid #d9dee6;
+    border-radius: 0.4rem;
+    font-size: 0.9rem;
+    outline: none;
+}
+
+.search-input:focus {
+    border-color: #4caf50;
+    box-shadow: 0 0 0 3px rgba(76,175,80,.1);
+}
+
+.muted-count {
+    margin-left: auto;
+    color: #8a94a6;
+    font-size: 0.85rem;
+}
+
+/* 覆盖 app.css 顶部老的 .btn-primary 单色定义（那份来自 Blazor 模板，与 Admin 风格不符） */
+.btn-primary,
+.btn-ghost {
+    padding: 0.5rem 1rem;
+    border-radius: 0.4rem;
+    font-size: 0.88rem;
+    cursor: pointer;
+    transition: all 0.15s;
+    border: 1px solid transparent;
+}
+
+.btn-primary {
+    background: #4caf50;
+    color: #fff;
+    border-color: #4caf50;
+    font-weight: 600;
+}
+
+.btn-primary:hover:not(:disabled) {
+    background: #43a047;
+}
+
+.btn-primary:disabled {
+    opacity: 0.5;
+    cursor: not-allowed;
+}
+
+.btn-ghost {
+    background: #fff;
+    color: #4d5566;
+    border-color: #d9dee6;
+}
+
+.btn-ghost:hover {
+    border-color: #4caf50;
+    color: #4caf50;
+}
+
+.btn-link {
+    background: none;
+    border: none;
+    color: #4caf50;
+    font-size: 0.85rem;
+    cursor: pointer;
+    padding: 0.25rem 0.5rem;
+    border-radius: 0.3rem;
+}
+
+.btn-link:hover {
+    background: rgba(76,175,80,.08);
+}
+
+.btn-link.danger {
+    color: #d32f2f;
+}
+
+.btn-link.danger:hover {
+    background: rgba(211,47,47,.08);
+}
+
+.table-card {
+    margin: 1.25rem 2rem;
+    background: #fff;
+    border: 1px solid #eef0f2;
+    border-radius: 0.6rem;
+    overflow: hidden;
+}
+
+.admin-table {
+    width: 100%;
+    border-collapse: collapse;
+    font-size: 0.88rem;
+}
+
+.admin-table th {
+    text-align: left;
+    padding: 0.75rem 1rem;
+    background: #fafbfc;
+    color: #6c7484;
+    font-weight: 600;
+    font-size: 0.78rem;
+    letter-spacing: 0.02em;
+    border-bottom: 1px solid #eef0f2;
+    text-transform: uppercase;
+}
+
+.admin-table td {
+    padding: 0.75rem 1rem;
+    border-bottom: 1px solid #f2f4f7;
+    color: #2b323d;
+    vertical-align: middle;
+}
+
+.admin-table tbody tr:last-child td {
+    border-bottom: none;
+}
+
+.admin-table tbody tr:hover {
+    background: #fafbfc;
+}
+
+.empty {
+    text-align: center;
+    padding: 4rem 1rem;
+    color: #8a94a6;
+    background: #fff;
+    margin: 1.25rem 2rem;
+    border-radius: 0.6rem;
+    border: 1px dashed #d9dee6;
+}
+
+.empty-icon {
+    font-size: 3rem;
+    margin-bottom: 0.75rem;
+}
+

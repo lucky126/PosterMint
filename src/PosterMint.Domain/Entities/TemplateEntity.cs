@@ -12,21 +12,30 @@ public sealed class TemplateEntity
 
     public string? Description { get; set; }
 
-    public TemplateSceneType Scene { get; set; } = TemplateSceneType.SingleDish;
+    /// <summary>行业分类；仅当 Ownership=Category 时用于分组。</summary>
+    public TemplateSceneType Scene { get; set; } = TemplateSceneType.Custom;
 
-    public TemplateStatus Status { get; set; } = TemplateStatus.Draft;
+    /// <summary>模板归属：Shop 商铺专属 / Category 行业通用。</summary>
+    public TemplateOwnership Ownership { get; set; } = TemplateOwnership.Category;
 
-    public string CanvasJson { get; set; } = "{}";
+    /// <summary>Ownership=Shop 时指向 ShopEntity；Category 时为 null。</summary>
+    public int? ShopId { get; set; }
 
-    public string FieldsJson { get; set; } = "[]";
+    /// <summary>PSP 完整 JSON（CC 工具产出，粘进 PC 后台入库）。</summary>
+    public string Psp { get; set; } = "{}";
 
-    public string LayoutJson { get; set; } = "[]";
+    /// <summary>PSP schema 版本号，如 "PSP-v1"。</summary>
+    public string SchemaVersion { get; set; } = string.Empty;
+
+    /// <summary>从 PSP 解析出的 slot 总数，冗余存，便于列表页展示。</summary>
+    public int SlotCount { get; set; }
+
+    /// <summary>预览图 URL / 相对路径；CC 制作时产出的示意图。</summary>
+    public string? PreviewImage { get; set; }
 
     public DateTimeOffset CreatedAt { get; set; }
 
     public DateTimeOffset UpdatedAt { get; set; }
 
-    public ICollection<TemplateTagEntity> Tags { get; set; } = new List<TemplateTagEntity>();
-
-    public ICollection<PosterSessionEntity> Sessions { get; set; } = new List<PosterSessionEntity>();
+    public ShopEntity? Shop { get; set; }
 }

@@ -342,3 +342,95 @@
     font-size: 0.85rem;
     margin-top: 0.5rem;
 }
+
+/* ============ v2 商铺账号 & 登录日志 ============ */
+
+/* 列表：用户名 + 密码状态点 */
+.user-line {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.4rem;
+}
+.tkey {
+    font-family: SFMono-Regular, Consolas, "Liberation Mono", monospace;
+    font-size: 0.78rem;
+    color: #5f6673;
+    background: #f5f6f8;
+    padding: 0.1rem 0.4rem;
+    border-radius: 4px;
+}
+.dot {
+    font-size: 0.7rem;
+    line-height: 1;
+    position: relative;
+    top: -1px;
+}
+.dot--good { color: #4caf50; }
+.dot--warn { color: #f0ad4e; }
+.muted { color: #a4abb5; font-size: 0.85rem; }
+
+/* 编辑弹窗 · 登录凭证块 */
+.auth-block {
+    margin: 0.75rem 0 0.5rem;
+    padding: 0.85rem 0.95rem;
+    background: #fafbfc;
+    border: 1px solid #eef0f2;
+    border-radius: 6px;
+}
+.auth-block__head {
+    display: flex; align-items: center; justify-content: space-between;
+    font-size: 0.85rem; font-weight: 600; color: #1e2530;
+    margin-bottom: 0.7rem;
+}
+.auth-block__hint {
+    font-size: 0.75rem; color: #a4abb5; font-weight: 400;
+}
+.req-hint {
+    font-weight: 400; color: #a4abb5; font-size: 0.72rem;
+    margin-left: 0.4rem;
+}
+
+/* 登录日志表 */
+.modal--wide {
+    width: 900px;
+    max-width: 95vw;
+}
+.logs-summary {
+    color: #6c7484; font-size: 0.85rem;
+    margin-bottom: 0.6rem;
+}
+.admin-table--compact th,
+.admin-table--compact td {
+    padding: 0.5rem 0.75rem;
+    font-size: 0.82rem;
+}
+.result-pill {
+    display: inline-block;
+    padding: 0.1rem 0.55rem;
+    border-radius: 999px;
+    font-size: 0.74rem;
+    font-weight: 600;
+    line-height: 1.5;
+    white-space: nowrap;
+}
+.result--success { background: rgba(76,175,80,.12); color: #2f7d32; }
+.result--badpassword,
+.result--usernotfound { background: rgba(211,47,47,.1); color: #a8071a; }
+.result--disabled { background: #eef0f2; color: #6c7484; }
+.result--nopasswordset { background: rgba(240,173,78,.14); color: #a4590a; }
+
+.ua-cell {
+    max-width: 320px;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+    color: #6c7484;
+    font-size: 0.78rem;
+    font-family: SFMono-Regular, Consolas, monospace;
+}
+
+.empty.small {
+    padding: 2rem 1rem;
+    margin: 0.5rem 0;
+}
+

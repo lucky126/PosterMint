@@ -27,12 +27,12 @@ public sealed class DatabaseHeartbeatWorker(
             using var scope = serviceProvider.CreateScope();
             var dbContext = scope.ServiceProvider.GetRequiredService<PosterMintDbContext>();
             var templateCount = await dbContext.Templates.CountAsync(cancellationToken);
-            var sessionCount = await dbContext.Sessions.CountAsync(cancellationToken);
+            var shopCount = await dbContext.Shops.CountAsync(cancellationToken);
 
             logger.LogInformation(
-                "Heartbeat OK. Templates: {TemplateCount}, Sessions: {SessionCount}",
+                "Heartbeat OK. Templates: {TemplateCount}, Shops: {ShopCount}",
                 templateCount,
-                sessionCount);
+                shopCount);
         }
         catch (Exception exception)
         {

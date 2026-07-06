@@ -1,0 +1,82 @@
+/* ============================================================
+   PSP 模板列表页样式（作用于 AdminPspTemplates.razor）
+   通用样式（page-hero/toolbar/table/empty/btn-*）在全局 app.css。
+============================================================ */
+
+/* ---- 归属徽章 ---- */
+.pill {
+    display: inline-block;
+    padding: 0.15rem 0.6rem;
+    border-radius: 12px;
+    font-size: 0.75rem;
+    font-weight: 600;
+    line-height: 1.4;
+    white-space: nowrap;
+}
+.pill--shop { background: #fff2e5; color: #b8500a; border: 1px solid #ffd7b0; }
+.pill--category { background: #e8f4ff; color: #0b5bd3; border: 1px solid #b9d9ff; }
+
+/* ---- 缩略图 / 代码样式 ---- */
+.mini-thumb {
+    width: 44px; height: 44px; border-radius: 6px;
+    object-fit: cover; background: #f2f4f7; display: block;
+}
+.mini-thumb--empty {
+    display: flex; align-items: center; justify-content: center;
+    color: #a4abb5; font-size: 0.75rem;
+    border: 1px dashed #d9dde3; background: transparent;
+}
+.tkey {
+    font-family: SFMono-Regular, Consolas, "Liberation Mono", monospace;
+    font-size: 0.8rem; color: #5f6673;
+    background: #f5f6f8; padding: 0.1rem 0.4rem; border-radius: 4px;
+}
+.row-title { font-weight: 600; color: #1e2530; }
+.row-sub { font-size: 0.78rem; color: #6c7484; margin-top: 0.15rem; }
+.filter-select {
+    height: 34px; padding: 0 0.55rem;
+    border: 1px solid #d9dde3; border-radius: 6px;
+    background: #fff; font-size: 0.85rem; color: #1e2530;
+}
+.btn-link--danger { color: #c8322b; }
+
+/* ---- 详情弹窗 ---- */
+.modal-mask {
+    position: fixed; inset: 0;
+    background: rgba(20, 24, 30, 0.5);
+    display: flex; align-items: center; justify-content: center; z-index: 1000;
+}
+.modal {
+    background: #fff; border-radius: 10px;
+    width: 720px; max-width: calc(100vw - 40px);
+    max-height: calc(100vh - 80px);
+    display: flex; flex-direction: column;
+    box-shadow: 0 24px 80px rgba(0, 0, 0, 0.25);
+}
+.modal--wide { width: 960px; }
+.modal-head {
+    display: flex; justify-content: space-between; align-items: center;
+    padding: 1rem 1.4rem; border-bottom: 1px solid #eef0f2;
+}
+.modal-head h3 { margin: 0; font-size: 1.05rem; color: #1e2530; }
+.modal-head small { margin-left: 0.5rem; font-weight: 400; }
+.icon-btn {
+    background: transparent; border: none; font-size: 1.2rem;
+    color: #6c7484; cursor: pointer; padding: 0.2rem 0.5rem;
+}
+.modal-body { padding: 1.2rem 1.4rem; overflow: auto; }
+.meta-list {
+    display: grid; grid-template-columns: 1fr 1fr;
+    gap: 0.6rem 1.2rem; margin: 0 0 1rem;
+}
+.meta-list div { display: flex; gap: 0.75rem; }
+.meta-list dt { color: #6c7484; font-size: 0.82rem; min-width: 4.5rem; }
+.meta-list dd { margin: 0; color: #1e2530; font-size: 0.85rem; font-weight: 500; }
+.json-label { display: block; font-size: 0.82rem; color: #6c7484; margin-bottom: 0.4rem; }
+.json-view {
+    width: 100%; height: 420px;
+    font-family: SFMono-Regular, Consolas, monospace;
+    font-size: 0.78rem; line-height: 1.5;
+    padding: 0.8rem; border: 1px solid #d9dde3; border-radius: 6px;
+    background: #fafbfc; resize: vertical;
+}

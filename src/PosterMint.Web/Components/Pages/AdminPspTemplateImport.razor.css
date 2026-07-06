@@ -1,0 +1,315 @@
+/* ============================================================
+   PSP 模板导入页样式（作用于 AdminPspTemplateImport.razor）
+   通用样式（page-hero/btn-*）在全局 app.css。
+============================================================ */
+
+.import-hero { background: linear-gradient(180deg, #fafbfc 0%, #fff 100%); }
+.hero-actions { display: flex; gap: 0.5rem; align-items: center; }
+
+.import-wrap {
+    max-width: 1180px;
+    margin: 1.4rem auto 6rem;
+    padding: 0 2rem;
+    display: flex;
+    flex-direction: column;
+    gap: 1.2rem;
+}
+
+/* ---- Step 卡片 ---- */
+.step-card {
+    background: #fff;
+    border: 1px solid #eef0f2;
+    border-radius: 12px;
+    padding: 1.4rem 1.6rem;
+    box-shadow: 0 1px 2px rgba(15, 23, 42, 0.03);
+}
+
+.step-head {
+    display: flex; align-items: center; gap: 0.75rem; margin-bottom: 1.1rem;
+}
+
+.step-head h2 {
+    margin: 0;
+    font-size: 1rem;
+    color: #1e2530;
+    font-weight: 700;
+    flex: 0 0 auto;
+}
+
+.step-num {
+    display: inline-flex; align-items: center; justify-content: center;
+    width: 28px; height: 28px;
+    border-radius: 50%;
+    background: #4caf50;
+    color: #fff;
+    font-weight: 700; font-size: 0.9rem;
+    line-height: 1;
+}
+
+.head-hint {
+    font-size: 0.75rem;
+    color: #a4abb5;
+    font-weight: 400;
+    margin-left: 0.4rem;
+}
+
+.head-right {
+    margin-left: auto;
+    display: flex;
+    gap: 0.4rem;
+}
+
+.chip-btn {
+    height: 30px;
+    padding: 0 0.75rem;
+    background: #f5f6f8;
+    border: 1px solid #e6e8ec;
+    border-radius: 15px;
+    font-size: 0.78rem;
+    color: #4b5262;
+    cursor: pointer;
+    transition: all 0.12s;
+}
+.chip-btn:hover:not(:disabled) {
+    background: #eef1f5; border-color: #d9dde3; color: #1e2530;
+}
+.chip-btn:disabled { opacity: 0.5; cursor: not-allowed; }
+
+/* ---- Step 1: 归属选择大卡片 ---- */
+.own-picker {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 0.9rem;
+    margin-bottom: 1rem;
+}
+
+.own-card {
+    display: flex;
+    flex-direction: column;
+    align-items: flex-start;
+    text-align: left;
+    padding: 1.05rem 1.2rem;
+    border: 2px solid #e6e8ec;
+    border-radius: 10px;
+    background: #fff;
+    cursor: pointer;
+    transition: all 0.15s;
+    font: inherit;
+    color: inherit;
+}
+.own-card:hover {
+    border-color: #b6dcb8;
+    background: #fafffa;
+}
+.own-card.is-active {
+    border-color: #4caf50;
+    background: linear-gradient(180deg, #f1faf1 0%, #ffffff 100%);
+    box-shadow: 0 0 0 4px rgba(76,175,80,.1);
+}
+.own-ico { font-size: 1.6rem; line-height: 1; margin-bottom: 0.5rem; }
+.own-title { font-weight: 700; font-size: 1rem; color: #1e2530; margin-bottom: 0.2rem; }
+.own-desc { font-size: 0.82rem; color: #6c7484; }
+
+.sub-picker {
+    display: flex; align-items: center; gap: 0.6rem;
+    border-top: 1px dashed #eef0f2;
+    padding-top: 1rem;
+}
+.sub-label { font-size: 0.82rem; color: #4b5262; font-weight: 600; flex: 0 0 auto; }
+.sub-label .req { color: #d32f2f; }
+.sub-select {
+    flex: 1; max-width: 360px;
+    height: 36px; padding: 0 0.65rem;
+    border: 1px solid #d9dde3; border-radius: 6px;
+    background: #fff; font-size: 0.9rem;
+}
+
+/* ---- Step 2: JSON 两栏 ---- */
+.json-two-col {
+    display: grid;
+    grid-template-columns: 1fr 300px;
+    gap: 1rem;
+    min-height: 380px;
+}
+.json-col { display: flex; flex-direction: column; }
+.psp-input {
+    width: 100%;
+    height: 100%;
+    min-height: 380px;
+    padding: 0.9rem 1rem;
+    border: 1px solid #d9dde3;
+    border-radius: 8px;
+    background: #0f1420;
+    color: #dfe4ee;
+    font-family: SFMono-Regular, Consolas, "Liberation Mono", monospace;
+    font-size: 0.82rem;
+    line-height: 1.6;
+    resize: vertical;
+    tab-size: 2;
+}
+.psp-input:focus {
+    outline: none;
+    border-color: #4caf50;
+    box-shadow: 0 0 0 3px rgba(76,175,80,.18);
+}
+.psp-input::placeholder { color: #6b7280; }
+
+/* 右侧校验区 */
+.json-col--check {
+    background: #fafbfc;
+    border: 1px solid #eef0f2;
+    border-radius: 8px;
+    padding: 1rem;
+    overflow: auto;
+    max-height: 480px;
+}
+
+.empty-check {
+    display: flex; flex-direction: column; align-items: center;
+    justify-content: center; height: 100%;
+    color: #a4abb5; text-align: center;
+    gap: 0.5rem;
+}
+.empty-check__ico { font-size: 2rem; opacity: 0.5; }
+.empty-check p { margin: 0; font-size: 0.85rem; }
+.btn-inline {
+    background: none; border: 1px dashed #b6dcb8;
+    color: #388e3c; padding: 0.35rem 0.75rem;
+    border-radius: 20px; font-size: 0.8rem; cursor: pointer;
+}
+.btn-inline:hover { background: #f1faf1; }
+
+.badge {
+    display: flex; gap: 0.7rem; align-items: center;
+    padding: 0.7rem 0.9rem;
+    border-radius: 8px;
+    margin-bottom: 0.9rem;
+}
+.badge__ico {
+    display: inline-flex; align-items: center; justify-content: center;
+    width: 32px; height: 32px;
+    border-radius: 50%;
+    font-weight: 700; font-size: 1rem;
+    flex: 0 0 auto;
+}
+.badge__title { font-weight: 700; font-size: 0.92rem; line-height: 1.2; }
+.badge__sub { font-size: 0.78rem; margin-top: 0.15rem; opacity: 0.85; }
+
+.badge--good { background: #edf7ed; color: #2f7d32; border: 1px solid #c8e6c9; }
+.badge--good .badge__ico { background: #4caf50; color: #fff; }
+
+.badge--bad { background: #fdecea; color: #a8071a; border: 1px solid #f5c2c0; }
+.badge--bad .badge__ico { background: #d0342c; color: #fff; }
+
+.stat-grid {
+    display: grid; grid-template-columns: 1fr 1fr; gap: 0.5rem;
+    margin-bottom: 0.9rem;
+}
+.stat {
+    background: #fff; border: 1px solid #eef0f2; border-radius: 6px;
+    padding: 0.5rem 0.65rem;
+}
+.stat-num { font-weight: 700; font-size: 0.95rem; color: #1e2530; }
+.stat-lbl { font-size: 0.72rem; color: #6c7484; margin-top: 0.1rem; }
+
+.type-row { display: flex; flex-wrap: wrap; gap: 0.35rem; margin-bottom: 0.9rem; }
+.type-chip {
+    font-size: 0.72rem; padding: 0.15rem 0.55rem;
+    border-radius: 10px; font-weight: 600;
+    border: 1px solid transparent;
+}
+.type-chip--background { background: #eef0f2; color: #6c7484; border-color: #dfe2e6; }
+.type-chip--text { background: #edf7ed; color: #2f7d32; border-color: #c8e6c9; }
+.type-chip--image { background: #e5f0fb; color: #1565c0; border-color: #bbdefb; }
+.type-chip--group { background: #fff4e5; color: #a4590a; border-color: #ffd8a8; }
+
+.mini-preview {
+    margin-top: 0.6rem;
+    background: #fff;
+    border: 1px solid #eef0f2;
+    border-radius: 8px;
+    padding: 0.7rem;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 0.5rem;
+}
+.mini-preview__title {
+    font-size: 0.75rem; color: #6c7484;
+    text-transform: uppercase; letter-spacing: 0.08em;
+    align-self: flex-start;
+}
+.mini-svg {
+    background: #eef1f5;
+    border-radius: 4px;
+    max-width: 100%;
+    height: auto;
+}
+
+.err-list {
+    margin: 0; padding-left: 1.15rem;
+    color: #5b1a15; font-size: 0.8rem; line-height: 1.55;
+}
+.err-list li { margin-bottom: 0.3rem; }
+
+.side-hint { color: #a4abb5; font-size: 0.85rem; }
+
+/* ---- Step 3: 元信息 ---- */
+.meta-grid {
+    display: grid; grid-template-columns: 1fr 1fr;
+    gap: 0.9rem 1.2rem;
+}
+.field { display: flex; flex-direction: column; gap: 0.4rem; }
+.field-wide { grid-column: span 2; }
+.field label { font-size: 0.82rem; color: #4b5262; font-weight: 600; }
+.field input {
+    height: 36px; padding: 0 0.65rem;
+    border: 1px solid #d9dde3; border-radius: 6px;
+    font-size: 0.9rem;
+}
+.field input:focus {
+    outline: none;
+    border-color: #4caf50;
+    box-shadow: 0 0 0 3px rgba(76,175,80,.15);
+}
+
+/* ---- Footer bar ---- */
+.footer-bar {
+    position: sticky;
+    bottom: 0;
+    background: rgba(255,255,255,0.94);
+    backdrop-filter: blur(8px);
+    border-top: 1px solid #eef0f2;
+    margin: 1rem -2rem 0;
+    padding: 1rem 2rem;
+    display: flex;
+    flex-direction: column;
+    gap: 0.75rem;
+    z-index: 10;
+}
+.footer-actions {
+    display: flex; gap: 0.7rem; justify-content: flex-end;
+}
+.btn-cta {
+    min-width: 140px;
+    height: 42px;
+    font-size: 0.95rem;
+    font-weight: 700;
+}
+
+.server-error {
+    padding: 0.7rem 0.9rem;
+    background: #fff2f0;
+    border: 1px solid #ffccc7;
+    border-radius: 6px;
+    color: #a8071a;
+    font-size: 0.85rem;
+}
+
+/* 窄屏塌方两栏 → 单栏 */
+@@media (max-width: 900px) {
+    .json-two-col { grid-template-columns: 1fr; }
+    .own-picker { grid-template-columns: 1fr; }
+    .meta-grid { grid-template-columns: 1fr; }
+    .field-wide { grid-column: auto; }
+}

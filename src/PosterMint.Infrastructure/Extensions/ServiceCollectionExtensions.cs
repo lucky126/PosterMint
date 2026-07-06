@@ -1,16 +1,12 @@
 using PosterMint.Application.AI;
-using PosterMint.Application.Rendering;
 using PosterMint.Application.Configs;
-using PosterMint.Application.Sessions;
+using PosterMint.Application.PspTemplates;
 using PosterMint.Application.Shops;
-using PosterMint.Application.Templates;
 using PosterMint.Infrastructure.AI;
 using PosterMint.Infrastructure.Configs;
 using PosterMint.Infrastructure.Persistence;
-using PosterMint.Infrastructure.Rendering;
-using PosterMint.Infrastructure.Sessions;
+using PosterMint.Infrastructure.PspTemplates;
 using PosterMint.Infrastructure.Shops;
-using PosterMint.Infrastructure.Templates;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
@@ -34,13 +30,12 @@ public static class ServiceCollectionExtensions
 
         services.AddHttpClient();
         services.Configure<LlmOptions>(BindLlmOptions(configuration));
-        services.AddSingleton<ISessionInteractionStore, SessionInteractionStore>();
-        services.AddScoped<ITemplateService, TemplateService>();
-        services.AddScoped<ISessionService, SessionService>();
         services.AddScoped<IConfigService, ConfigService>();
-        services.AddScoped<IRenderService, PosterRenderService>();
         services.AddScoped<IChatEditingAiService, ChatEditingAiService>();
         services.AddScoped<IShopService, ShopService>();
+        services.AddSingleton<IPasswordHasher, Pbkdf2PasswordHasher>();
+        services.AddScoped<IShopAuthService, ShopAuthService>();
+        services.AddScoped<IPspTemplateService, PspTemplateService>();
 
         return services;
     }

@@ -8,13 +8,11 @@ public sealed class PosterMintDbContext(DbContextOptions<PosterMintDbContext> op
 {
     public DbSet<TemplateEntity> Templates => Set<TemplateEntity>();
 
-    public DbSet<TemplateTagEntity> TemplateTags => Set<TemplateTagEntity>();
-
-    public DbSet<PosterSessionEntity> Sessions => Set<PosterSessionEntity>();
-
     public DbSet<ConfigEntryEntity> ConfigEntries => Set<ConfigEntryEntity>();
 
     public DbSet<ShopEntity> Shops => Set<ShopEntity>();
+
+    public DbSet<ShopLoginLogEntity> ShopLoginLogs => Set<ShopLoginLogEntity>();
 
     protected override void OnModelCreating(ModelBuilder modelBuilder)
     {
@@ -26,41 +24,21 @@ public sealed class PosterMintDbContext(DbContextOptions<PosterMintDbContext> op
             entity.Property(x => x.Name).HasMaxLength(256).IsRequired();
             entity.Property(x => x.Description).HasMaxLength(1000);
             entity.Property(x => x.Scene).HasConversion<string>().HasMaxLength(64);
-            entity.Property(x => x.Status).HasConversion<string>().HasMaxLength(64);
-            entity.Property(x => x.CanvasJson).IsRequired();
-            entity.Property(x => x.FieldsJson).IsRequired();
-            entity.Property(x => x.LayoutJson).IsRequired();
+            entity.Property(x => x.Ownership).HasConversion<string>().HasMaxLength(32);
+            entity.Property(x => x.ShopId);
+            entity.Property(x => x.Psp).IsRequired();
+            entity.Property(x => x.SchemaVersion).HasMaxLength(32).IsRequired();
+            entity.Property(x => x.SlotCount);
+            entity.Property(x => x.PreviewImage).HasMaxLength(512);
+
             entity.HasIndex(x => x.TemplateKey).IsUnique();
-            entity.HasMany(x => x.Tags)
-                .WithOne(x => x.Template)
-                .HasForeignKey(x => x.TemplateId)
-                .OnDelete(DeleteBehavior.Cascade);
-            entity.HasMany(x => x.Sessions)
-                .WithOne(x => x.Template)
-                .HasForeignKey(x => x.TemplateId)
-                .OnDelete(DeleteBehavior.Restrict);
-        });
+            entity.HasIndex(x => new { x.Ownership, x.ShopId });
+            entity.HasIndex(x => x.Scene);
 
-        modelBuilder.Entity<TemplateTagEntity>(entity =>
-        {
-            entity.ToTable("TemplateTags");
-            entity.HasKey(x => x.Id);
-            entity.Property(x => x.Dimension).HasMaxLength(64).IsRequired();
-            entity.Property(x => x.TagValue).HasMaxLength(128).IsRequired();
-            entity.HasIndex(x => new { x.TemplateId, x.Dimension, x.TagValue }).IsUnique();
-        });
-
-        modelBuilder.Entity<PosterSessionEntity>(entity =>
-        {
-            entity.ToTable("Sessions");
-            entity.HasKey(x => x.Id);
-            entity.Property(x => x.SessionKey).HasMaxLength(64).IsRequired();
-            entity.Property(x => x.Name).HasMaxLength(256).IsRequired();
-            entity.Property(x => x.Status).HasConversion<string>().HasMaxLength(64);
-            entity.Property(x => x.TemplateSnapshotJson).IsRequired();
-            entity.Property(x => x.CurrentFieldsJson).IsRequired();
-            entity.Property(x => x.CurrentLayoutJson).IsRequired();
-            entity.HasIndex(x => x.SessionKey).IsUnique();
+            entity.HasOne(x => x.Shop)
+                .WithMany()
+                .HasForeignKey(x => x.ShopId)
+                .OnDelete(DeleteBehavior.SetNull);
         });
 
         modelBuilder.Entity<ConfigEntryEntity>(entity =>
@@ -86,37 +64,38 @@ public sealed class PosterMintDbContext(DbContextOptions<PosterMintDbContext> op
             entity.Property(x => x.Industry).HasMaxLength(32).IsRequired();
             entity.Property(x => x.Status).HasMaxLength(32).IsRequired();
             entity.Property(x => x.Remark).HasMaxLength(1000);
+
+            entity.Property(x => x.Username).HasMaxLength(64);
+            entity.Property(x => x.PasswordHash).HasMaxLength(256);
+            entity.Property(x => x.PasswordSalt).HasMaxLength(128);
+            entity.Property(x => x.PasswordHashVersion);
+            entity.Property(x => x.LastLoginAt);
+
             entity.HasIndex(x => x.ShopKey).IsUnique();
+            entity.HasIndex(x => x.Username).IsUnique();
         });
 
-        SeedDefaults(modelBuilder);
-    }
+        modelBuilder.Entity<ShopLoginLogEntity>(entity =>
+        {
+            entity.ToTable("ShopLoginLogs");
+            entity.HasKey(x => x.Id);
+            entity.Property(x => x.AttemptedUsername).HasMaxLength(64).IsRequired();
+            entity.Property(x => x.Result).HasConversion<string>().HasMaxLength(32);
+            entity.Property(x => x.Ip).HasMaxLength(64);
+            entity.Property(x => x.UserAgent).HasMaxLength(512);
 
-    private static void SeedDefaults(ModelBuilder modelBuilder)
-    {
+            entity.HasOne(x => x.Shop)
+                .WithMany()
+                .HasForeignKey(x => x.ShopId)
+                .OnDelete(DeleteBehavior.SetNull);
+
+            entity.HasIndex(x => new { x.ShopId, x.OccurredAt });
+            entity.HasIndex(x => x.AttemptedUsername);
+        });
+
+        // 内置配置项（AI 相关开关；老的 Approval/TagSystem 已随 v1 一起废弃）
         var now = new DateTimeOffset(2026, 6, 29, 0, 0, 0, TimeSpan.Zero);
-
         modelBuilder.Entity<ConfigEntryEntity>().HasData(
-            new ConfigEntryEntity
-            {
-                Id = 1,
-                ConfigKey = "Features:Approval",
-                ConfigGroup = "Features",
-                ConfigValue = "true",
-                Description = "审核流程开关",
-                IsSecret = false,
-                UpdatedAt = now
-            },
-            new ConfigEntryEntity
-            {
-                Id = 2,
-                ConfigKey = "Features:TagSystem",
-                ConfigGroup = "Features",
-                ConfigValue = "true",
-                Description = "标签推荐开关",
-                IsSecret = false,
-                UpdatedAt = now
-            },
             new ConfigEntryEntity
             {
                 Id = 3,

@@ -33,6 +33,11 @@ public class Program
 
         await app.Services.InitializeDatabaseAsync();
 
+        // 根路径 302 到后台商铺列表；这里比 Blazor Router 更早注册，因此 Router 不会看到 "/"。
+        // 用普通 endpoint 而不是 Razor 组件里的 NavigateTo，是为了避开 Blazor 预渲染阶段
+        // 主动调 NavigateTo 会抛 NavigationException 的已知行为。
+        app.MapGet("/", () => Results.Redirect("/admin/shops"));
+
         app.MapPosterMintApi();
 
         app.MapRazorComponents<App>()

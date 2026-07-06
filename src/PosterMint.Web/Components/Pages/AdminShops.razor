@@ -1,6 +1,8 @@
 @page "/admin/shops"
 @using PosterMint.Application.Shops
+@using PosterMint.Domain.Enums
 @inject IShopService ShopService
+@inject IShopAuthService AuthService
 @inject IJSRuntime JS
 
 <PageTitle>商户管理</PageTitle>
@@ -9,13 +11,13 @@
     <div>
         <p class="eyebrow">MERCHANTS</p>
         <h1>商户管理</h1>
-        <p class="page-sub">管理平台上的餐饮商户账号、联系方式和状态。</p>
+        <p class="page-sub">管理平台上的餐饮商户账号、联系方式、登录凭证。</p>
     </div>
     <button class="btn-primary" @onclick="OpenCreate">+ 新增商户</button>
 </div>
 
 <div class="toolbar">
-    <input class="search-input" placeholder="搜索店名 / 联系人 / 电话" @bind="_keyword" @bind:event="oninput" @onkeydown="OnKeywordKey" />
+    <input class="search-input" placeholder="搜索店名 / 联系人 / 电话 / 用户名" @bind="_keyword" @bind:event="oninput" @onkeydown="OnKeywordKey" />
     <button class="btn-ghost" @onclick="LoadAsync">搜索</button>
     <span class="muted-count">共 @_shops.Count 家商户</span>
 </div>
@@ -38,12 +40,12 @@ else
             <thead>
                 <tr>
                     <th style="width:180px">店铺名称</th>
-                    <th style="width:120px">联系人</th>
-                    <th style="width:140px">联系电话</th>
-                    <th>地址</th>
+                    <th style="width:140px">登录账号</th>
+                    <th style="width:110px">联系人</th>
+                    <th style="width:130px">联系电话</th>
                     <th style="width:80px">状态</th>
-                    <th style="width:140px">更新时间</th>
-                    <th style="width:140px"></th>
+                    <th style="width:150px">最近登录</th>
+                    <th style="width:200px"></th>
                 </tr>
             </thead>
             <tbody>
@@ -54,16 +56,45 @@ else
                             <div class="cell-title">@shop.Name</div>
                             <div class="cell-sub">@shop.ShopKey</div>
                         </td>
+                        <td>
+                            @if (!string.IsNullOrEmpty(shop.Username))
+                            {
+                                <div class="user-line">
+                                    <code class="tkey">@shop.Username</code>
+                                    @if (shop.HasPassword)
+                                    {
+                                        <span class="dot dot--good" title="已设置密码">●</span>
+                                    }
+                                    else
+                                    {
+                                        <span class="dot dot--warn" title="未设置密码">●</span>
+                                    }
+                                </div>
+                            }
+                            else
+                            {
+                                <span class="muted">未配置</span>
+                            }
+                        </td>
                         <td>@(shop.ContactName ?? "-")</td>
                         <td>@(shop.ContactPhone ?? "-")</td>
-                        <td class="ellipsis">@(shop.Address ?? "-")</td>
                         <td>
                             <span class="status-pill @(shop.Status == "Active" ? "is-active" : "is-disabled")">
                                 @(shop.Status == "Active" ? "启用中" : "已停用")
                             </span>
                         </td>
-                        <td class="muted-time">@shop.UpdatedAt.LocalDateTime.ToString("yyyy-MM-dd HH:mm")</td>
+                        <td class="muted-time">
+                            @if (shop.LastLoginAt is DateTimeOffset t)
+                            {
+                                @t.LocalDateTime.ToString("yyyy-MM-dd HH:mm")
+                            }
+                            else
+                            {
+                                <span class="muted">—</span>
+                            }
+                        </td>
                         <td class="actions">
+                            <button class="btn-link" @onclick="() => OpenLogs(shop)">登录记录</button>
                             <button class="btn-link" @onclick="() => OpenEdit(shop)">编辑</button>
                             <button class="btn-link danger" @onclick="() => DeleteAsync(shop)">删除</button>
                         </td>
@@ -114,6 +145,35 @@ else
                         </select>
                     </div>
                 </div>
+
+                <div class="auth-block">
+                    <div class="auth-block__head">
+                        <span>🔐 登录凭证</span>
+                        <span class="auth-block__hint">用于商户小程序端登录</span>
+                    </div>
+                    <div class="form-grid">
+                        <div class="form-row">
+                            <label>用户名</label>
+                            <input @bind="_editing.Username" placeholder="3~32 位，字母/数字/_/-" />
+                        </div>
+                        <div class="form-row">
+                            <label>
+                                密码
+                                @if (_editingId != null && _editingHadPassword)
+                                {
+                                    <span class="req-hint">留空 = 保持不变</span>
+                                }
+                                else
+                                {
+                                    <span class="req-hint">至少 6 位；留空则暂不设密码</span>
+                                }
+                            </label>
+                            <input type="password" @bind="_editing.Password"
+                                   placeholder="@((_editingId != null && _editingHadPassword) ? "•••••• (已设置)" : "至少 6 位")" />
+                        </div>
+                    </div>
+                </div>
+
                 <div class="form-row">
                     <label>备注</label>
                     <textarea @bind="_editing.Remark" rows="3" placeholder="选填"></textarea>
@@ -133,6 +193,67 @@ else
     </div>
 }
 
+@if (_logsShop != null)
+{
+    <div class="modal-mask" @onclick="CloseLogs">
+        <div class="modal modal--wide" @onclick:stopPropagation>
+            <div class="modal-header">
+                <h2>登录记录 · @_logsShop.Name</h2>
+                <button class="modal-close" @onclick="CloseLogs">×</button>
+            </div>
+            <div class="modal-body">
+                @if (_logsLoading)
+                {
+                    <div class="empty">加载中…</div>
+                }
+                else if (_logs.Count == 0)
+                {
+                    <div class="empty small">
+                        <div class="empty-icon">📋</div>
+                        <div>还没有登录尝试记录。</div>
+                    </div>
+                }
+                else
+                {
+                    <div class="logs-summary">
+                        共 @_logs.Count 条 · 成功 @_logs.Count(x => x.Result == ShopLoginResult.Success) · 失败 @_logs.Count(x => x.Result != ShopLoginResult.Success)
+                    </div>
+                    <table class="admin-table admin-table--compact">
+                        <thead>
+                            <tr>
+                                <th style="width:150px">时间</th>
+                                <th style="width:110px">结果</th>
+                                <th style="width:130px">尝试的用户名</th>
+                                <th style="width:120px">IP</th>
+                                <th>User-Agent</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            @foreach (var log in _logs)
+                            {
+                                <tr>
+                                    <td class="muted-time">@log.OccurredAt.LocalDateTime.ToString("yyyy-MM-dd HH:mm:ss")</td>
+                                    <td>
+                                        <span class="result-pill result--@log.Result.ToString().ToLowerInvariant()">
+                                            @ResultText(log.Result)
+                                        </span>
+                                    </td>
+                                    <td><code class="tkey">@log.AttemptedUsername</code></td>
+                                    <td>@(log.Ip ?? "—")</td>
+                                    <td class="ua-cell" title="@log.UserAgent">@(log.UserAgent ?? "—")</td>
+                                </tr>
+                            }
+                        </tbody>
+                    </table>
+                }
+            </div>
+            <div class="modal-footer">
+                <button class="btn-ghost" @onclick="CloseLogs">关闭</button>
+            </div>
+        </div>
+    </div>
+}
+
 @code {
     private List<ShopDto> _shops = new();
     private bool _loading = true;
@@ -141,8 +262,14 @@ else
     // 编辑态
     private ShopUpsertRequest? _editing;
     private int? _editingId;
+    private bool _editingHadPassword;   // 用于占位文案：区分"从没设过密码"和"已设置但保留原样"
     private bool _saving;
     private string? _error;
+
+    // 登录日志态
+    private ShopDto? _logsShop;
+    private List<ShopLoginLogDto> _logs = new();
+    private bool _logsLoading;
 
     protected override async Task OnInitializedAsync() => await LoadAsync();
 
@@ -168,6 +295,7 @@ else
     private void OpenCreate()
     {
         _editingId = null;
+        _editingHadPassword = false;
         _editing = new ShopUpsertRequest { Industry = "餐饮", Status = "Active" };
         _error = null;
     }
@@ -175,6 +303,7 @@ else
     private void OpenEdit(ShopDto shop)
     {
         _editingId = shop.Id;
+        _editingHadPassword = shop.HasPassword;
         _editing = new ShopUpsertRequest
         {
             Name = shop.Name,
@@ -183,7 +312,9 @@ else
             Address = shop.Address,
             Industry = shop.Industry,
             Status = shop.Status,
-            Remark = shop.Remark
+            Remark = shop.Remark,
+            Username = shop.Username,
+            Password = null  // 编辑时不回填密码；留空 = 保持不变
         };
         _error = null;
     }
@@ -192,6 +323,7 @@ else
     {
         _editing = null;
         _editingId = null;
+        _editingHadPassword = false;
         _error = null;
     }
 
@@ -208,6 +340,7 @@ else
                 await ShopService.UpdateAsync(_editingId.Value, _editing);
             _editing = null;
             _editingId = null;
+            _editingHadPassword = false;
             await LoadAsync();
         }
         catch (Exception ex)
@@ -227,4 +360,37 @@ else
         await ShopService.DeleteAsync(shop.Id);
         await LoadAsync();
     }
+
+    private async Task OpenLogs(ShopDto shop)
+    {
+        _logsShop = shop;
+        _logsLoading = true;
+        _logs = new List<ShopLoginLogDto>();
+        StateHasChanged();
+        try
+        {
+            var list = await AuthService.ListLogsAsync(shop.Id, 100);
+            _logs = list.ToList();
+        }
+        finally
+        {
+            _logsLoading = false;
+        }
+    }
+
+    private void CloseLogs()
+    {
+        _logsShop = null;
+        _logs = new List<ShopLoginLogDto>();
+    }
+
+    private static string ResultText(ShopLoginResult r) => r switch
+    {
+        ShopLoginResult.Success => "✓ 成功",
+        ShopLoginResult.UserNotFound => "用户不存在",
+        ShopLoginResult.BadPassword => "密码错",
+        ShopLoginResult.Disabled => "已停用",
+        ShopLoginResult.NoPasswordSet => "无密码",
+        _ => r.ToString()
+    };
 }
